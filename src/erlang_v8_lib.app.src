@@ -1,0 +1,13 @@
+{application, erlang_v8_lib, [
+	{description, ""},
+	{vsn, "0.1.0"},
+	{id, "git"},
+	{modules, []},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib
+	]},
+	{mod, {erlang_v8_lib_app, []}},
+	{env, []}
+]}.

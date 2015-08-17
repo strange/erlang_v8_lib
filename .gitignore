@@ -1,0 +1,12 @@
+.DS_Store
+
+*.beam
+deps/*
+ebin/*
+erl_crash.dump
+/log
+/.rebar
+
+/_build
+/.rebar3
+/rebar.lock
