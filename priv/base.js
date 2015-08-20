@@ -983,7 +983,7 @@ var __internal = {
 
 var external = {
     run: function(command, args) {
-        var ref = String(new Date());
+        var ref = String(Math.random());
 
         var p = new Promise(function(resolve, reject) {
             __internal.promises[ref] = {

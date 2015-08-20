@@ -16,10 +16,10 @@ run(_VM, []) -> ok;
 run(VM, [init]) ->
     Source = <<"
         http.get('http://www.google.se').then(function(d) {
-            console.log(d);
+            console.log('here');
             return http.get('http://www.trell.se/');
         }).then(function(d) {
-            console.log(d);
+            console.log(Math.random());
         });
     ">>,
     {ok, Actions} = erlang_v8:eval(VM, <<"
