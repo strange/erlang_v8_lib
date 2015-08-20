@@ -36,14 +36,15 @@ run(VM, [init]) ->
 run(VM, [Action|T]) ->
     NewActions = case Action of
         [<<"http">>, Ref, Args] ->
-            case erlang_v8_http3:http(Args) of
+            case erlang_v8_http2:http(Args) of
                 {ok, Body} ->
-                    [callback, [<<"success">>, Ref, [limit_size(Body)]]];
+                    [[callback, <<"success">>, Ref, [limit_size(Body)]]];
                 {error, _Reason} ->
-                    [[<<"error">>, Ref, [<<"bad error">>]]]
+                    [[callback, <<"error">>, Ref, [<<"bad error">>]]]
             end;
         [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8:call(VM, <<"handleExternal">>, [Status, Ref, Args]),
+            {ok, Actions} = erlang_v8:call(VM, <<"__internal.handleExternal">>,
+                                           [Status, Ref, Args]),
             Actions;
         [<<"log">>, Data] ->
             io:format("Log: ~p~n", [Data]),

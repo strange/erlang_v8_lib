@@ -100,7 +100,9 @@
 
     function lib$es6$promise$asap$$useSetTimeout() {
         return function() {
-            setTimeout(lib$es6$promise$asap$$flush, 1);
+            // TODO: look at this :D
+            lib$es6$promise$asap$$flush();
+            // setTimeout(lib$es6$promise$asap$$flush, 1);
         };
     }
 
@@ -965,9 +967,9 @@ var __internal = {
     promises: {},
     handleExternal: function(status, ref, args) {
         __internal.actions = [];
-
         if (status && ref) {
             var promise = __internal.promises[ref];
+
             if (status === 'success') {
                 promise.resolve(args);
             } else if (status === 'error') {
@@ -982,8 +984,12 @@ var __internal = {
 var external = {
     run: function(command, args) {
         var ref = String(new Date());
+
         var p = new Promise(function(resolve, reject) {
-            __internal.promises[ref] = p;
+            __internal.promises[ref] = {
+                resolve: resolve,
+                reject: reject
+            };
             __internal.actions.push([command, ref, args]);
         });
 
