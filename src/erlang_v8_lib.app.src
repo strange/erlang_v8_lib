@@ -9,5 +9,14 @@
 		stdlib
 	]},
 	{mod, {erlang_v8_lib_app, []}},
-	{env, []}
+	{env, [
+        {files, [
+            "priv/promise.js",
+            "priv/base.js",
+            "priv/http.js"
+        ]},
+        {handlers, [
+            {<<"http">>, erlang_v8_http2}
+        ]}
+    ]}
 ]}.
