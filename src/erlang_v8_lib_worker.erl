@@ -15,8 +15,10 @@ start_link(Args) ->
 init([Core, Modules]) ->
     process_flag(trap_exit, true),
     {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Core ++ Modules]),
+    <<A:32/integer, B:32/integer, C:32/integer>> = crypto:rand_bytes(12),
+    random:seed(A, B, C),
     Name = random:uniform(1000000),
-    io:format("Worker ~p online!~n", [Name]),
+    io:format("Worker ~p ready to serve!~n", [Name]),
     {ok, #state{vm = VM, name = Name}}.
 
 handle_call({run, Source}, _From, #state{vm = VM, name = Name} = State) ->

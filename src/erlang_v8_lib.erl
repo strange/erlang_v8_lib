@@ -21,7 +21,7 @@ test() ->
             console.log('error');
         });
     ">>,
-    run(Source).
+    spawn(fun() -> run(Source) end).
 
 run(Source) ->
     poolboy:transaction(v8_worker_pool, fun(Worker) ->
