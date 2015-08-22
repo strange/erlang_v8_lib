@@ -13,7 +13,7 @@ run([URL, _MethodName, _Type, _Body]) ->
                     {error, <<"Timeout">>};
                 Other ->
                     io:format("Other here: ~p~n", [Other]),
-                    {error, <<>>}
+                    {error, <<"Unknown error.">>}
             end,
             shotgun:close(Conn),
             Response;

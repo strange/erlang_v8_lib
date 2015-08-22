@@ -3,11 +3,10 @@
 -export([test/0]).
 -export([run/2]).
 
+-define(TIMEOUT, 15000).
+
 test() ->
     application:start(erlang_v8_lib),
-    {ok, Core} = application:get_env(erlang_v8_lib, core),
-    {ok, Modules} = application:get_env(erlang_v8_lib, modules),
-    {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Core ++ Modules]),
     Source = <<"
         http.get('http://www.google.se').then(function(d) {
             console.log('here');
@@ -22,7 +21,13 @@ test() ->
             console.log('error');
         });
     ">>,
-    run(VM, Source).
+    run(Source).
+
+run(Source) ->
+    poolboy:transaction(v8_worker_pool, fun(Worker) ->
+        io:format("Worker: ~p~n", [Worker]),
+        gen_server:call(Worker, {run, Source}, ?TIMEOUT)
+    end).
 
 run(VM, Source) when is_binary(Source) ->
     {ok, Handlers} = application:get_env(erlang_v8_lib, handlers),
