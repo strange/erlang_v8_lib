@@ -9,6 +9,8 @@ run([URL, _MethodName, _Type, _Body]) ->
             Response = case shotgun:get(Conn, Path) of
                 {ok, #{body := Body}} ->
                     {ok, Body};
+                {error, {timeout, _}} ->
+                    {error, <<"Timeout">>};
                 Other ->
                     io:format("Other here: ~p~n", [Other]),
                     {error, <<>>}

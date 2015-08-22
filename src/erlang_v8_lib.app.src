@@ -10,9 +10,11 @@
 	]},
 	{mod, {erlang_v8_lib_app, []}},
 	{env, [
-        {files, [
+        {core, [
             "priv/promise.js",
-            "priv/base.js",
+            "priv/base.js"
+        ]},
+        {modules, [
             "priv/http.js"
         ]},
         {handlers, [

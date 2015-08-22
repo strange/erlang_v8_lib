@@ -5,14 +5,21 @@
 
 test() ->
     application:start(erlang_v8_lib),
-    {ok, Files} = application:get_env(erlang_v8_lib, files),
-    {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
+    {ok, Core} = application:get_env(erlang_v8_lib, core),
+    {ok, Modules} = application:get_env(erlang_v8_lib, modules),
+    {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Core ++ Modules]),
     Source = <<"
         http.get('http://www.google.se').then(function(d) {
             console.log('here');
             return http.get('http://www.trell.se/');
         }).then(function(d) {
             console.log(Math.random());
+        });
+
+        http.get('http://www.google.se').then(function(d) {
+            return http.get('http://www.xfsdatrell.se/');
+        }).catch(function(e) {
+            console.log('error');
         });
     ">>,
     run(VM, Source).
