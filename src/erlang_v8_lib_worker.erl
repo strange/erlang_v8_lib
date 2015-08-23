@@ -12,9 +12,10 @@
 start_link(Args) ->
     gen_server:start_link(?MODULE, Args, []).
 
-init([Core, Modules]) ->
+init([Files]) ->
     process_flag(trap_exit, true),
-    {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Core ++ Modules]),
+    io:format("Files: ~p~n", [code:priv_dir(erlang_v8_lib)]),
+    {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
     <<A:32/integer, B:32/integer, C:32/integer>> = crypto:rand_bytes(12),
     random:seed(A, B, C),
     Name = random:uniform(1000000),

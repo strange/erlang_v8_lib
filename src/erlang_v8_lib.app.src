@@ -1,21 +1,24 @@
 {application, erlang_v8_lib, [
-	{description, ""},
+	{description, "Cool app"},
 	{vsn, "0.1.0"},
 	{id, "git"},
 	{modules, []},
 	{registered, []},
 	{applications, [
 		kernel,
-		stdlib
+		stdlib,
+        erlang_v8,
+        poolboy,
+        shotgun
 	]},
 	{mod, {erlang_v8_lib_app, []}},
 	{env, [
         {core, [
-            "priv/promise.js",
-            "priv/base.js"
+            {erlang_v8_lib, "promise.js"},
+            {erlang_v8_lib, "base.js"}
         ]},
         {modules, [
-            "priv/http.js"
+            {erlang_v8_lib, "http.js"}
         ]},
         {handlers, [
             {<<"http">>, erlang_v8_http2}

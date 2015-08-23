@@ -11,10 +11,14 @@ start_link() ->
 pool_spec() ->
     {ok, Core} = application:get_env(erlang_v8_lib, core),
     {ok, Modules} = application:get_env(erlang_v8_lib, modules),
+    Files = [begin
+                 Path = code:priv_dir(Appname),
+                 filename:join(Path, Filename)
+             end || {Appname, Filename} <- Core ++ Modules],
     PoolArgs = [{size, 10}, {max_overflow, 20},
                 {name, {local, v8_worker_pool}},
                 {worker_module, erlang_v8_lib_worker}],
-    WorkerArgs = [Core, Modules],
+    WorkerArgs = [Files],
     poolboy:child_spec(v8_worker_pool, PoolArgs, WorkerArgs).
 
 init([]) ->
