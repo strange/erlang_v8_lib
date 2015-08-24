@@ -5,6 +5,7 @@ deps/*
 ebin/*
 erl_crash.dump
 /log
+/logs
 /.rebar
 
 /_build
