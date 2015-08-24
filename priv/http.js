@@ -1,19 +1,23 @@
-var http = {
-    request: function(url, options) {
+var http = {};
+
+(function() {
+    http.request = function(url, options) {
         var method = String(options.method).toUpperCase() || 'GET';
-        var data = options.data || '';
+        var data = String(options.data) || '';
         return external.run('http', [url, method, data]);
-    },
-    get: function(url, queryParameters) {
+    };
+    
+    http.get = function(url, queryParameters) {
         return http.request(url, {
             method: 'GET',
             data: queryParameters
         });
-    },
-    post: function(url, data) {
+    };
+
+    http.post = function(url, data) {
         return http.request(url, {
             method: 'POST',
             data: data
         });
-    }
-};
+    };
+}());
