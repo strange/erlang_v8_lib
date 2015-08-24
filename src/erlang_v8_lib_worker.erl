@@ -25,7 +25,7 @@ init([Files]) ->
 handle_call({run, Source}, _From, #state{vm = VM, name = Name} = State) ->
     io:format("Worker ~p got a job!~n", [Name]),
     Reply = erlang_v8_lib:run(VM, Source),
-    {reply, {ok, Reply}, State};
+    {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 

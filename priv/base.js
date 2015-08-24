@@ -34,6 +34,12 @@ var external = {
     }
 };
 
+var process = {
+    return: function(value) {
+        __internal.actions.push(['return', value]);
+    }
+};
+
 var console = {
     log: function(msg) {
         __internal.actions.push(['log', msg]);

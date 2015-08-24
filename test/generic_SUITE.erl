@@ -25,5 +25,5 @@ end_per_suite(_Config) ->
 %% Tests
 
 console_log(_Config) ->
-    {ok, ok} = erlang_v8_lib:run(<<"console.log('test');">>),
+    ok = erlang_v8_lib:run(<<"console.log('test');">>),
     ok.

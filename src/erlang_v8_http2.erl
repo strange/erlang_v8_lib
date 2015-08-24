@@ -2,13 +2,14 @@
 
 -export([run/1]).
 
-run([URL, _MethodName, _Type, _Body]) ->
+run([URL, MethodName, _Type, Data]) ->
     case parse_uri(URL) of
-        {ok, {Scheme, _UserInfo, Host, Port, Path, _Query}} ->
+        {ok, {Scheme, _UserInfo, Host, Port, Path, Query}} ->
             {ok, Conn} = shotgun:open(Host, Port, Scheme),
-            Response = case shotgun:get(Conn, Path) of
+            Response = case shotgun:request(Conn, parse_method(MethodName),
+                                            Path ++ Query, #{}, Data, #{}) of
                 {ok, #{body := Body}} ->
-                    {ok, Body};
+                    {ok, [{body, Body}]};
                 {error, {timeout, _}} ->
                     {error, <<"Timeout">>};
                 Other ->
@@ -21,6 +22,10 @@ run([URL, _MethodName, _Type, _Body]) ->
             io:format("Error: ~p~n", [Error]),
             {error, lol}
     end.
+
+parse_method(<<"GET">>) -> get;
+parse_method(<<"POST">>) -> post;
+parse_method(_) -> get.
 
 parse_uri(URI) when is_binary(URI) ->
     parse_uri(binary_to_list(URI));

@@ -1,15 +1,17 @@
 -module(erlang_v8_lib).
 
 -export([test/0]).
+-export([run/1]).
 -export([run/2]).
 
 -define(TIMEOUT, 15000).
 
 test() ->
-    application:start(erlang_v8_lib),
+    application:ensure_all_started(erlang_v8_lib),
     Source = <<"
         http.get('http://www.google.se').then(function(d) {
             console.log('here');
+            process.return('testar');
             return http.get('http://www.trell.se/');
         }).then(function(d) {
             console.log(Math.random());
@@ -47,6 +49,9 @@ run(VM, [{init, Source}], Handlers) ->
     ">>),
     run(VM, Actions, Handlers);
 
+run(_VM, [[<<"return">>, Value]|_], _Handlers) ->
+    {ok, Value};
+
 run(VM, [Action|T], Handlers) ->
     NewActions = case Action of
         [<<"external">>, HandlerIdentifier, Ref, Args] ->
@@ -71,9 +76,9 @@ dispatch_external(HandlerIdentifier, Ref, Args, Handlers) ->
         {ok, HandlerMod} ->
             case HandlerMod:run(Args) of
                 {ok, Response} ->
-                    [[callback, <<"success">>, Ref, [Response]]];
+                    [[callback, <<"success">>, Ref, Response]];
                 {error, _Reason} ->
-                    [[callback, <<"error">>, Ref, [<<"bad error">>]]]
+                    [[callback, <<"error">>, Ref, <<"bad error">>]]
             end
     end.
 
