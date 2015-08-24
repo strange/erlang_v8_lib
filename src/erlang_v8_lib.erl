@@ -15,7 +15,13 @@ run(VM, Source) when is_binary(Source) ->
     {ok, Handlers} = application:get_env(erlang_v8_lib, handlers),
     run(VM, [{init, Source}], dict:from_list(Handlers)).
 
-run(_VM, [], _Handlers) -> ok;
+run(VM, [], _Handlers) ->
+    ok = erlang_v8:reset_vm(VM),
+    ok;
+
+run(VM, [[<<"return">>, Value]|_], _Handlers) ->
+    ok = erlang_v8:reset_vm(VM),
+    {ok, Value};
 
 run(VM, [{init, Source}], Handlers) ->
     {ok, Actions} = erlang_v8:eval(VM, <<"
@@ -28,9 +34,6 @@ run(VM, [{init, Source}], Handlers) ->
         })();
     ">>),
     run(VM, Actions, Handlers);
-
-run(_VM, [[<<"return">>, Value]|_], _Handlers) ->
-    {ok, Value};
 
 run(VM, [Action|T], Handlers) ->
     NewActions = case Action of
