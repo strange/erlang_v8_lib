@@ -1,6 +1,6 @@
 var http = {
     request: function(url, options) {
-        var method = options.method || 'GET';
+        var method = String(options.method).toUpperCase() || 'GET';
         var data = options.data || '';
         return external.run('http', [url, method, data]);
     },
