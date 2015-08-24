@@ -23,9 +23,12 @@ run([URL, MethodName, _Type, Data]) ->
             {error, lol}
     end.
 
-parse_method(<<"GET">>) -> get;
-parse_method(<<"POST">>) -> post;
-parse_method(_) -> get.
+parse_method(<<"GET">>) ->
+    get;
+parse_method(<<"POST">>) ->
+    post;
+parse_method(_) ->
+    get.
 
 parse_uri(URI) when is_binary(URI) ->
     parse_uri(binary_to_list(URI));

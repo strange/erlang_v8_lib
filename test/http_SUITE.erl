@@ -35,11 +35,18 @@ get(_Config) ->
     [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data0),
 
     Data1 = run_success_case(<<"
+    http.get('https://httpbin.org/get?test=fest').then(function(data) {
+        process.return(data.body);
+    });
+    ">>),
+    [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data1),
+
+    Data2 = run_success_case(<<"
     http.get('http://httpbin.org/get').then(function(data) {
         process.return(data.body);
     });
     ">>),
-    [{}] = proplists:get_value(<<"args">>, Data1),
+    [{}] = proplists:get_value(<<"args">>, Data2),
     ok.
 
 post(_Config) ->
