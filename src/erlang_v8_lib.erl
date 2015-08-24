@@ -1,29 +1,9 @@
 -module(erlang_v8_lib).
 
--export([test/0]).
 -export([run/1]).
 -export([run/2]).
 
 -define(TIMEOUT, 15000).
-
-test() ->
-    application:ensure_all_started(erlang_v8_lib),
-    Source = <<"
-        http.get('http://www.google.se').then(function(d) {
-            console.log('here');
-            process.return('testar');
-            return http.get('http://www.trell.se/');
-        }).then(function(d) {
-            console.log(Math.random());
-        });
-
-        http.get('http://www.google.se').then(function(d) {
-            return http.get('http://www.xfsdatrell.se/');
-        }).catch(function(e) {
-            console.log('error');
-        });
-    ">>,
-    spawn(fun() -> run(Source) end).
 
 run(Source) ->
     poolboy:transaction(v8_worker_pool, fun(Worker) ->
