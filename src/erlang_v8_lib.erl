@@ -7,7 +7,6 @@
 
 run(Source) ->
     poolboy:transaction(v8_worker_pool, fun(Worker) ->
-        io:format("Worker: ~p~n", [Worker]),
         gen_server:call(Worker, {run, Source}, ?TIMEOUT)
     end).
 
@@ -64,10 +63,3 @@ dispatch_external(HandlerIdentifier, Ref, Args, Handlers) ->
                     [[callback, <<"error">>, Ref, <<"bad error">>]]
             end
     end.
-
-%% -define(SIZE, 20000).
-%%
-%% limit_size(<<S0:?SIZE/binary, _/binary>> = S) when size(S) > ?SIZE ->
-%%     S0;
-%% limit_size(S) ->
-%%     S.
