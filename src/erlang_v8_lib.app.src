@@ -19,7 +19,8 @@
         ]},
         {modules, [
             {erlang_v8_lib, "http.js"},
-            {erlang_v8_lib, "event.js"}
+            {erlang_v8_lib, "event.js"},
+            {erlang_v8_lib, "channel.js"}
         ]},
         {handlers, [
             {<<"http">>, erlang_v8_http2}
