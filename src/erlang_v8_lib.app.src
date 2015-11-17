@@ -23,6 +23,7 @@
             {erlang_v8_lib, "channel.js"}
         ]},
         {handlers, [
+            {<<"hydna">>, erlang_v8_hydna},
             {<<"http">>, erlang_v8_http2}
         ]}
     ]}
