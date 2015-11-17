@@ -9,6 +9,7 @@
 -export([console_log/1]).
 -export([return/1]).
 -export([reset_vm/1]).
+-export([context/1]).
 
 %% Callbacks
 
@@ -16,6 +17,7 @@ all() ->
     [
         console_log,
         reset_vm,
+        context,
         return
     ].
 
@@ -30,6 +32,12 @@ end_per_suite(_Config) ->
 
 console_log(_Config) ->
     ok = erlang_v8_lib:run(<<"console.log('test');">>),
+    ok.
+
+context(_Config) ->
+    {ok, <<"abc">>} = erlang_v8_lib:run_with_context(
+                        <<"process.return(Event.getType());">>,
+                        [{type, <<"abc">>}]),
     ok.
 
 return(_Config) ->

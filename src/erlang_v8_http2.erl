@@ -1,8 +1,8 @@
 -module(erlang_v8_http2).
 
--export([run/1]).
+-export([run/2]).
 
-run([URL, MethodName, Data]) ->
+run([URL, MethodName, Data], _HandlerContext) ->
     case parse_uri(URL) of
         {ok, {Scheme, _UserInfo, Host, Port, Path, Query}} ->
             {ok, Conn} = shotgun:open(Host, Port, Scheme),

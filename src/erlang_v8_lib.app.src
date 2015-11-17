@@ -18,7 +18,8 @@
             {erlang_v8_lib, "base.js"}
         ]},
         {modules, [
-            {erlang_v8_lib, "http.js"}
+            {erlang_v8_lib, "http.js"},
+            {erlang_v8_lib, "event.js"}
         ]},
         {handlers, [
             {<<"http">>, erlang_v8_http2}

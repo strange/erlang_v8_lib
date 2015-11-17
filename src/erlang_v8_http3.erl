@@ -1,8 +1,8 @@
 -module(erlang_v8_http3).
 
--export([http/1]).
+-export([http/2]).
 
-http([URL, MethodName, _Type, Payload]) ->
+http([URL, MethodName, _Type, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Options = [],
     Headers = [],

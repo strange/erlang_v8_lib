@@ -1,8 +1,8 @@
 -module(erlang_v8_http).
 
--export([http/1]).
+-export([http/2]).
 
-http([URL, MethodName, Type, Body]) ->
+http([URL, MethodName, Type, Body], _HandlerContext) ->
     HTTPOptions = [{timeout, 2000}],
     Options = [{body_format, binary}],
     Method = clean_method(MethodName),
@@ -21,8 +21,7 @@ http([URL, MethodName, Type, Body]) ->
             {error, <<"Socket closed remotely.">>};
         {error, timeout} ->
             {error, <<"Request timed out.">>};
-        {error, Reason} ->
-            lager:info("Unknown request error: ~p", [Reason]),
+        {error, _Reason} ->
             {error, <<"Unknown error.">>}
     end.
 

@@ -2,6 +2,10 @@ var __internal = {
     actions: [],
     data: [],
     promises: {},
+    context: {},
+    setContext: function(context) {
+        __internal.context = context || {};
+    },
     handleExternal: function(status, ref, args) {
         __internal.actions = [];
         if (status && ref) {
