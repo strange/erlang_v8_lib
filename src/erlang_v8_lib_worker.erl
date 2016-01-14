@@ -18,12 +18,14 @@ init([Files]) ->
     {ok, #state{vm = VM}}.
 
 handle_call({run, Source, HandlerContext}, _From, #state{vm = VM} = State) ->
-    Reply = erlang_v8_lib:run(VM, Source, HandlerContext),
+    {ok, Context} = erlang_v8_vm:create_context(VM),
+    Reply = erlang_v8_lib:run({Context, VM}, Source, HandlerContext),
     {reply, Reply, State};
 handle_call({run, Source, Context, HandlerContext}, _From,
             #state{vm = VM} = State) ->
-    {ok, _} = erlang_v8:call(VM, <<"__internal.setContext">>, [Context]),
-    Reply = erlang_v8_lib:run(VM, Source, HandlerContext),
+    {ok, Crx} = erlang_v8_vm:create_context(VM),
+    {ok, _} = erlang_v8:call(VM, Crx, <<"__internal.setContext">>, [Context]),
+    Reply = erlang_v8_lib:run({Crx, VM}, Source, HandlerContext),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.

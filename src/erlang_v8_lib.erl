@@ -29,16 +29,16 @@ run(VM, Source, HandlerContext) when is_binary(Source) ->
     {ok, Handlers} = application:get_env(erlang_v8_lib, handlers),
     run(VM, [{init, Source}], dict:from_list(Handlers), HandlerContext).
 
-run(VM, [], _Handlers, _HandlerContext) ->
-    ok = erlang_v8:reset_vm(VM),
+run({Context, VM}, [], _Handlers, _HandlerContext) ->
+    ok = erlang_v8_vm:destroy_context(VM, Context),
     ok;
 
-run(VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
-    ok = erlang_v8:reset_vm(VM),
+run({Context, VM}, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
+    ok = erlang_v8_vm:destroy_context(VM, Context),
     {ok, Value};
 
-run(VM, [{init, Source}], Handlers, HandlerContext) ->
-    case erlang_v8:eval(VM, <<"
+run({Context, VM}, [{init, Source}], Handlers, HandlerContext) ->
+    case erlang_v8:eval(VM, Context, <<"
         (function() {
             __internal.actions = [];
 
@@ -48,30 +48,32 @@ run(VM, [{init, Source}], Handlers, HandlerContext) ->
         })();
     ">>) of
         {ok, Actions} ->
-            run(VM, Actions, Handlers, HandlerContext);
+            run({Context, VM}, Actions, Handlers, HandlerContext);
         {error, Reason} when is_binary(Reason) ->
             {error, Reason};
         _Other ->
             {error, <<"Script error.">>}
     end;
 
-run(VM, [Action|T], Handlers, HandlerContext) ->
+run({Context, VM}, [Action|T], Handlers, HandlerContext) ->
     NewActions = case Action of
         [<<"external">>, HandlerIdentifier, Ref, Args] ->
             dispatch_external(HandlerIdentifier, Ref, Args, Handlers,
                               HandlerContext);
         [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8:call(VM, <<"__internal.handleExternal">>,
+            {ok, Actions} = erlang_v8:call(VM, Context,
+                                           <<"__internal.handleExternal">>,
                                            [Status, Ref, Args]),
             Actions;
         [<<"log">>, Data] ->
+            hydna_log:info(<<"localhost">>, Data),
             io:format("Log: ~p~n", [Data]),
             [];
         Other ->
             io:format("Other: ~p~n", [Other]),
             []
     end,
-    run(VM, NewActions ++ T, Handlers, HandlerContext).
+    run({Context, VM}, NewActions ++ T, Handlers, HandlerContext).
 
 dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
     case dict:find(HandlerIdentifier, Handlers) of
