@@ -19,12 +19,11 @@
         ]},
         {default_modules, [
             {<<"http">>, erlang_v8_lib, "http.js"},
-            {<<"event">>, erlang_v8_lib, "event.js"},
-            {<<"channel">>, erlang_v8_lib, "channel.js"}
+            {<<"console">>, erlang_v8_lib, "console.js"},
+            {<<"context">>, erlang_v8_lib, "context.js"}
         ]},
         {default_handlers, [
-            {<<"hydna">>, erlang_v8_hydna},
-            {<<"console">>, erlang_v8_hydna},
+            {<<"console">>, erlang_v8_stdout_console},
             {<<"http">>, erlang_v8_http2}
         ]},
         {local_modules, []},

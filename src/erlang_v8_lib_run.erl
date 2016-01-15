@@ -39,10 +39,6 @@ unwind({Context, VM}, [Action|T], Handlers, HandlerContext) ->
                                            <<"__internal.handleExternal">>,
                                            [Status, Ref, Args]),
             Actions;
-        [<<"log">>, Data] ->
-            %% hydna_log:info(<<"localhost">>, Data),
-            io:format("Log: ~p~n", [Data]),
-            [];
         Other ->
             io:format("Other: ~p~n", [Other]),
             []
@@ -57,6 +53,8 @@ dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
             case HandlerMod:run(Args, HandlerContext) of
                 {ok, Response} ->
                     [[callback, <<"success">>, Ref, Response]];
+                ok ->
+                    [[callback, <<"success">>, Ref, <<>>]];
                 {error, _Reason} ->
                     [[callback, <<"error">>, Ref, <<"bad error">>]]
             end

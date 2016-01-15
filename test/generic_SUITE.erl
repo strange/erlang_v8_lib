@@ -15,10 +15,10 @@
 
 all() ->
     [
-        console_log
-        %% reset_vm,
-        %% context,
-        %% return
+        console_log,
+        context,
+        reset_vm,
+        return
     ].
 
 init_per_suite(Config) ->
@@ -35,8 +35,8 @@ console_log(_Config) ->
     ok.
 
 context(_Config) ->
-    {ok, <<"abc">>} = erlang_v8_lib:run_with_context(
-                        <<"process.return(Event.getType());">>,
+    {ok, <<"abc">>} = erlang_v8_lib:run(
+                        <<"process.return(Context.get().type);">>,
                         [{type, <<"abc">>}]),
     ok.
 
