@@ -43,4 +43,3 @@ var process = {
         __internal.actions.push(['return', value]);
     }
 };
-

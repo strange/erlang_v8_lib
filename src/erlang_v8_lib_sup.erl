@@ -15,7 +15,6 @@ pool_spec() ->
     Modules = [{App, Mod} || {_Key, App, Mod} <-
                erlang_v8_lib_utils:extend(1, DefaultModules, LocalModules)],
 
-
     DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
     LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
     Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
