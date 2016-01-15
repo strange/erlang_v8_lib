@@ -15,10 +15,10 @@
 
 all() ->
     [
-        console_log,
-        reset_vm,
-        context,
-        return
+        console_log
+        %% reset_vm,
+        %% context,
+        %% return
     ].
 
 init_per_suite(Config) ->

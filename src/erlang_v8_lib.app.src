@@ -17,14 +17,17 @@
             {erlang_v8_lib, "promise.js"},
             {erlang_v8_lib, "base.js"}
         ]},
-        {modules, [
-            {erlang_v8_lib, "http.js"},
-            {erlang_v8_lib, "event.js"},
-            {erlang_v8_lib, "channel.js"}
+        {default_modules, [
+            {<<"http">>, erlang_v8_lib, "http.js"},
+            {<<"event">>, erlang_v8_lib, "event.js"},
+            {<<"channel">>, erlang_v8_lib, "channel.js"}
         ]},
-        {handlers, [
+        {default_handlers, [
             {<<"hydna">>, erlang_v8_hydna},
+            {<<"console">>, erlang_v8_hydna},
             {<<"http">>, erlang_v8_http2}
-        ]}
+        ]},
+        {local_modules, []},
+        {local_handlers, []}
     ]}
 ]}.

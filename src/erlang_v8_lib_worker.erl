@@ -7,25 +7,29 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
 
--record(state, {vm}).
+-record(state, {vm, handlers}).
 
 start_link(Args) ->
     gen_server:start_link(?MODULE, Args, []).
 
-init([Files]) ->
+init([Files, Handlers]) ->
     process_flag(trap_exit, true),
     {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
-    {ok, #state{vm = VM}}.
+    {ok, #state{vm = VM, handlers = Handlers}}.
 
-handle_call({run, Source, HandlerContext}, _From, #state{vm = VM} = State) ->
-    {ok, Context} = erlang_v8_vm:create_context(VM),
-    Reply = erlang_v8_lib:run({Context, VM}, Source, HandlerContext),
+handle_call({run, Source, HandlerContext}, _From,
+            #state{vm = VM, handlers = Handlers} = State) ->
+    {ok, VMCtx} = erlang_v8_vm:create_context(VM),
+    Reply = erlang_v8_lib_run:run({VMCtx, VM}, Source, Handlers,
+                                  HandlerContext),
+    ok = erlang_v8_vm:destroy_context(VM, VMCtx),
     {reply, Reply, State};
 handle_call({run, Source, Context, HandlerContext}, _From,
-            #state{vm = VM} = State) ->
-    {ok, Crx} = erlang_v8_vm:create_context(VM),
-    {ok, _} = erlang_v8:call(VM, Crx, <<"__internal.setContext">>, [Context]),
-    Reply = erlang_v8_lib:run({Crx, VM}, Source, HandlerContext),
+            #state{vm = VM, handlers = Handlers} = State) ->
+    {ok, VMCtx} = erlang_v8_vm:create_context(VM),
+    {ok, _} = erlang_v8:call(VM, VMCtx, <<"__internal.setContext">>, [Context]),
+    Reply = erlang_v8_lib_run:run({VMCtx, VM}, Source, Handlers, HandlerContext),
+    ok = erlang_v8_vm:destroy_context(VM, VMCtx),
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.

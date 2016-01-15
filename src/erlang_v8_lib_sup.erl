@@ -10,7 +10,16 @@ start_link() ->
 
 pool_spec() ->
     {ok, Core} = application:get_env(erlang_v8_lib, core),
-    {ok, Modules} = application:get_env(erlang_v8_lib, modules),
+    DefaultModules = application:get_env(erlang_v8_lib, default_modules, []),
+    LocalModules = application:get_env(erlang_v8_lib, local_modules, []),
+    Modules = [{App, Mod} || {_Key, App, Mod} <-
+               erlang_v8_lib_utils:extend(1, DefaultModules, LocalModules)],
+
+
+    DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
+    LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
+    Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
+
     Files = [begin
                  Path = code:priv_dir(Appname),
                  filename:join(Path, Filename)
@@ -18,7 +27,7 @@ pool_spec() ->
     PoolArgs = [{size, 10}, {max_overflow, 20},
                 {name, {local, v8_worker_pool}},
                 {worker_module, erlang_v8_lib_worker}],
-    WorkerArgs = [Files],
+    WorkerArgs = [Files, Handlers],
     poolboy:child_spec(v8_worker_pool, PoolArgs, WorkerArgs).
 
 init([]) ->

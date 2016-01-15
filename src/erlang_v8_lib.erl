@@ -2,88 +2,19 @@
 
 -export([run/1]).
 -export([run/2]).
--export([run/3]).
--export([run/4]).
--export([run_with_context/2]).
--export([run_with_context/3]).
 
 -define(TIMEOUT, 15000).
 
 run(Source) ->
-    run(Source, #{}).
+    run(Source, #{}, ?TIMEOUT).
 
-run(Source, HandlerContext) ->
+run(Source, Timeout) when is_integer(Timeout) ->
+    run(Source, #{}, Timeout);
+
+run(Source, Context) when is_map(Context) ->
+    run(Source, Context, ?TIMEOUT).
+
+run(Source, Context, Timeout) ->
     poolboy:transaction(v8_worker_pool, fun(Worker) ->
-        gen_server:call(Worker, {run, Source, HandlerContext}, ?TIMEOUT)
+        gen_server:call(Worker, {run, Source, Context}, Timeout + 500)
     end).
-
-run_with_context(Source, Context) ->
-    run_with_context(Source, Context, #{}).
-
-run_with_context(Source, Context, HandlerContext) ->
-    poolboy:transaction(v8_worker_pool, fun(Worker) ->
-        gen_server:call(Worker, {run, Source, Context, HandlerContext}, ?TIMEOUT)
-    end).
-
-run(VM, Source, HandlerContext) when is_binary(Source) ->
-    {ok, Handlers} = application:get_env(erlang_v8_lib, handlers),
-    run(VM, [{init, Source}], dict:from_list(Handlers), HandlerContext).
-
-run({Context, VM}, [], _Handlers, _HandlerContext) ->
-    ok = erlang_v8_vm:destroy_context(VM, Context),
-    ok;
-
-run({Context, VM}, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
-    ok = erlang_v8_vm:destroy_context(VM, Context),
-    {ok, Value};
-
-run({Context, VM}, [{init, Source}], Handlers, HandlerContext) ->
-    case erlang_v8:eval(VM, Context, <<"
-        (function() {
-            __internal.actions = [];
-
-            ", Source/binary, "
-
-            return __internal.actions;
-        })();
-    ">>) of
-        {ok, Actions} ->
-            run({Context, VM}, Actions, Handlers, HandlerContext);
-        {error, Reason} when is_binary(Reason) ->
-            {error, Reason};
-        _Other ->
-            {error, <<"Script error.">>}
-    end;
-
-run({Context, VM}, [Action|T], Handlers, HandlerContext) ->
-    NewActions = case Action of
-        [<<"external">>, HandlerIdentifier, Ref, Args] ->
-            dispatch_external(HandlerIdentifier, Ref, Args, Handlers,
-                              HandlerContext);
-        [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8:call(VM, Context,
-                                           <<"__internal.handleExternal">>,
-                                           [Status, Ref, Args]),
-            Actions;
-        [<<"log">>, Data] ->
-            hydna_log:info(<<"localhost">>, Data),
-            io:format("Log: ~p~n", [Data]),
-            [];
-        Other ->
-            io:format("Other: ~p~n", [Other]),
-            []
-    end,
-    run({Context, VM}, NewActions ++ T, Handlers, HandlerContext).
-
-dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
-    case dict:find(HandlerIdentifier, Handlers) of
-        error ->
-            {error, <<"Invalid external handler.">>};
-        {ok, HandlerMod} ->
-            case HandlerMod:run(Args, HandlerContext) of
-                {ok, Response} ->
-                    [[callback, <<"success">>, Ref, Response]];
-                {error, _Reason} ->
-                    [[callback, <<"error">>, Ref, <<"bad error">>]]
-            end
-    end.
