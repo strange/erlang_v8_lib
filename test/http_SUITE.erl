@@ -13,8 +13,8 @@
 
 all() ->
     [
-        %% get,
-        %% post
+        get,
+        post
     ].
 
 init_per_suite(Config) ->
