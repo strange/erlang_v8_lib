@@ -4,8 +4,8 @@
 
 run([URL, MethodName, Data], _HandlerContext) ->
     case parse_uri(URL) of
-        {ok, {Scheme, _UserInfo, Host, Port, Path, Query}} ->
-            {ok, Conn} = shotgun:open(Host, Port, Scheme),
+        {ok, {_Scheme, _UserInfo, Host, Port, Path, Query}} ->
+            {ok, Conn} = shotgun:open(Host, Port),
             Response = case shotgun:request(Conn, parse_method(MethodName),
                                             Path ++ Query, #{}, Data, #{}) of
                 {ok, #{body := Body}} ->
