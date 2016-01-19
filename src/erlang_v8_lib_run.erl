@@ -55,7 +55,9 @@ dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
                     [[callback, <<"success">>, Ref, Response]];
                 ok ->
                     [[callback, <<"success">>, Ref, <<>>]];
+                {error, Reason} when is_binary(Reason); is_atom(Reason) ->
+                    [[callback, <<"error">>, Ref, Reason]];
                 {error, _Reason} ->
-                    [[callback, <<"error">>, Ref, <<"bad error">>]]
+                    [[callback, <<"error">>, Ref, <<"Unknown error.">>]]
             end
     end.

@@ -5,22 +5,29 @@
 run([URL, MethodName, Data], _HandlerContext) ->
     case parse_uri(URL) of
         {ok, {_Scheme, _UserInfo, Host, Port, Path, Query}} ->
-            {ok, Conn} = shotgun:open(Host, Port),
-            Response = case shotgun:request(Conn, parse_method(MethodName),
-                                            Path ++ Query, #{}, Data, #{}) of
-                {ok, #{body := Body}} ->
-                    {ok, [{body, Body}]};
-                {error, {timeout, _}} ->
-                    {error, <<"Timeout">>};
-                Other ->
-                    io:format("Other here: ~p~n", [Other]),
-                    {error, <<"Unknown error.">>}
-            end,
-            shotgun:close(Conn),
-            Response;
+            case shotgun:open(Host, Port) of
+                {ok, Conn} ->
+                    R = make_request(Conn, MethodName, Path, Query, Data),
+                    shotgun:close(Conn),
+                    R;
+                {error, gun_open_failed} ->
+                    {error, open_failed}
+            end;
         Error ->
             io:format("Error: ~p~n", [Error]),
             {error, lol}
+    end.
+
+make_request(Conn, MethodName, Path, Query, Data) ->
+    case shotgun:request(Conn, parse_method(MethodName),
+                                    Path ++ Query, #{}, Data, #{}) of
+        {ok, #{body := Body}} ->
+            {ok, Body};
+        {error, {timeout, _}} ->
+            {error, timeout};
+        Other ->
+            io:format("Other here: ~p~n", [Other]),
+            {error, unknown}
     end.
 
 parse_method(<<"GET">>) ->

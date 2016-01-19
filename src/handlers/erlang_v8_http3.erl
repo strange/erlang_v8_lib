@@ -1,8 +1,8 @@
 -module(erlang_v8_http3).
 
--export([http/2]).
+-export([run/2]).
 
-http([URL, MethodName, _Type, Payload], _HandlerContext) ->
+run([URL, MethodName, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Options = [],
     Headers = [],
@@ -13,6 +13,8 @@ http([URL, MethodName, _Type, Payload], _HandlerContext) ->
                  {ok, Body} -> {ok, Body};
                  {error, _Error} -> {error, error_reading_body}
              end;
+        {error, nxdomain} ->
+            {error, <<"Invalid domain">>};
         Other ->
             io:format("Other: ~p~n", [Other]),
             {error, other}

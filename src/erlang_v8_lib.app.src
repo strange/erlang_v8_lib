@@ -9,7 +9,7 @@
 		stdlib,
         erlang_v8,
         poolboy,
-        shotgun
+        hackney
 	]},
 	{mod, {erlang_v8_lib_app, []}},
 	{env, [
@@ -24,7 +24,7 @@
         ]},
         {default_handlers, [
             {<<"console">>, erlang_v8_stdout_console},
-            {<<"http">>, erlang_v8_http2}
+            {<<"http">>, erlang_v8_http3}
         ]},
         {local_modules, []},
         {local_handlers, []}
