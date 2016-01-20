@@ -21,5 +21,7 @@ run([URL, MethodName, Payload], _HandlerContext) ->
     end.
 
 clean_method(<<"post">>) -> post;
+clean_method(<<"POST">>) -> post;
 clean_method(<<"get">>) -> get;
+clean_method(<<"GET">>) -> get;
 clean_method(_Other) -> get.

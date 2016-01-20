@@ -29,21 +29,21 @@ end_per_suite(_Config) ->
 get(_Config) ->
     Data0 = run_success_case(<<"
     http.get('http://httpbin.org/get?test=fest').then(function(data) {
-        process.return(data.body);
+        process.return(data);
     });
     ">>),
     [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data0),
 
     Data1 = run_success_case(<<"
     http.get('https://httpbin.org/get?test=fest').then(function(data) {
-        process.return(data.body);
+        process.return(data);
     });
     ">>),
     [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data1),
 
     Data2 = run_success_case(<<"
     http.get('http://httpbin.org/get').then(function(data) {
-        process.return(data.body);
+        process.return(data);
     });
     ">>),
     [{}] = proplists:get_value(<<"args">>, Data2),
@@ -52,7 +52,7 @@ get(_Config) ->
 post(_Config) ->
     Data0 = run_success_case(<<"
     http.post('http://httpbin.org/post', 'hello').then(function(data) {
-        process.return(data.body);
+        process.return(data);
     });
     ">>),
     <<"hello">> = proplists:get_value(<<"data">>, Data0),
