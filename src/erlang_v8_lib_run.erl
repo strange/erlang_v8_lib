@@ -9,7 +9,7 @@ unwind(_VM, [], _Handlers, _HandlerContext) ->
     ok;
 
 unwind(_VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
-    {ok, Value};
+    {ok, jsx:decode(jsx:encode(Value), [return_maps])};
 
 unwind(VM, [{init, Source}], Handlers, HandlerContext) ->
     case erlang_v8:eval(VM, <<"
