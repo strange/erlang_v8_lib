@@ -2,22 +2,25 @@
 
 -export([run/2]).
 
-run([URL, MethodName, Payload], _HandlerContext) ->
+run([URL, Method, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
-    Options = [],
+    Opts = [],
     Headers = [],
-    case hackney:request(clean_method(MethodName), URL, Headers,
-                                    Payload, Options) of
-        {ok, _StatusCode, _RespHeaders, ClientRef} ->
-             case hackney:body(ClientRef) of
-                 {ok, Body} -> {ok, Body};
-                 {error, _Error} -> {error, error_reading_body}
-             end;
+    Now = erlang:timestamp(),
+    case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
+        {ok, Code, _RespHeaders, ClientRef} ->
+            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
+            case hackney:body(ClientRef) of
+                {ok, Body} ->
+                    {ok, #{ code => Code, body => Body, time => Time }};
+                {error, _Error} ->
+                    {error, <<"Error reading body.">>}
+            end;
         {error, nxdomain} ->
             {error, <<"Invalid domain">>};
         Other ->
             io:format("Other: ~p~n", [Other]),
-            {error, other}
+            {error, <<"Unkown error.">>}
     end.
 
 clean_method(<<"post">>) -> post;

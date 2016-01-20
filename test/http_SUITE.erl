@@ -27,38 +27,38 @@ end_per_suite(_Config) ->
 %% Tests
 
 get(_Config) ->
-    Data0 = run_success_case(<<"
+    {ok, Data0} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get?test=fest').then(function(data) {
         process.return(data);
     });
     ">>),
-    [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data0),
+    #{ <<"body">> := Body0 } = Data0,
+    #{ <<"args">> := #{ <<"test">> := <<"fest">> } } =
+        jsx:decode(Body0, [return_maps]),
 
-    Data1 = run_success_case(<<"
-    http.get('https://httpbin.org/get?test=fest').then(function(data) {
+    {ok, Data1} = erlang_v8_lib:run(<<"
+    http.get('http://httpbin.org/status/404').then(function(data) {
         process.return(data);
     });
     ">>),
-    [{<<"test">>, <<"fest">>}] = proplists:get_value(<<"args">>, Data1),
+    #{ <<"code">> := 404 } = Data1,
 
-    Data2 = run_success_case(<<"
-    http.get('http://httpbin.org/get').then(function(data) {
+    {ok, Data2} = erlang_v8_lib:run(<<"
+    http.get('http://httpbin.org/status/200').then(function(data) {
         process.return(data);
     });
     ">>),
-    [{}] = proplists:get_value(<<"args">>, Data2),
+    true = is_number(maps:get(<<"time">>, Data2)),
+
     ok.
 
 post(_Config) ->
-    Data0 = run_success_case(<<"
+    {ok, Data0} = erlang_v8_lib:run(<<"
     http.post('http://httpbin.org/post', 'hello').then(function(data) {
         process.return(data);
     });
     ">>),
-    <<"hello">> = proplists:get_value(<<"data">>, Data0),
+    #{ <<"body">> := Body0 } = Data0,
+    #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
 
     ok.
-
-run_success_case(Source) ->
-    {ok, Data} = erlang_v8_lib:run(Source),
-    jsx:decode(Data).
