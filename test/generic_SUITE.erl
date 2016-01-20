@@ -8,7 +8,6 @@
 
 -export([console_log/1]).
 -export([return/1]).
--export([reset_vm/1]).
 -export([context/1]).
 
 %% Callbacks
@@ -17,7 +16,6 @@ all() ->
     [
         console_log,
         context,
-        reset_vm,
         return
     ].
 
@@ -44,8 +42,3 @@ return(_Config) ->
     {ok, 1} = erlang_v8_lib:run(<<"process.return(1);">>),
     ok.
 
-reset_vm(_Config) ->
-    {ok, 1} = erlang_v8_lib:run(<<"__internal.lol = 1;
-                                  process.return(__internal.lol);">>),
-    {ok, null} = erlang_v8_lib:run(<<"process.return(__internal.lol);">>),
-    ok.
