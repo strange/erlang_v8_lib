@@ -5,14 +5,14 @@
 run(VM, Source, Handlers, HandlerContext) when is_binary(Source) ->
     unwind(VM, [{init, Source}], dict:from_list(Handlers), HandlerContext).
 
-unwind(_VM, [], _Handlers, _HandlerContext) ->
+unwind({_Context, _VM}, [], _Handlers, _HandlerContext) ->
     ok;
 
-unwind(_VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
+unwind({_Context, _VM}, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
     {ok, jsx:decode(jsx:encode(Value), [return_maps])};
 
-unwind(VM, [{init, Source}], Handlers, HandlerContext) ->
-    case erlang_v8:eval(VM, <<"
+unwind({Context, VM}, [{init, Source}], Handlers, HandlerContext) ->
+    case erlang_v8:eval(VM, Context, <<"
         (function() {
             __internal.actions = [];
 
@@ -22,27 +22,28 @@ unwind(VM, [{init, Source}], Handlers, HandlerContext) ->
         })();
     ">>) of
         {ok, Actions} ->
-            unwind(VM, Actions, Handlers, HandlerContext);
+            unwind({Context, VM}, Actions, Handlers, HandlerContext);
         {error, Reason} when is_binary(Reason) ->
             {error, Reason};
         _Other ->
             {error, <<"Script error.">>}
     end;
 
-unwind(VM, [Action|T], Handlers, HandlerContext) ->
+unwind({Context, VM}, [Action|T], Handlers, HandlerContext) ->
     NewActions = case Action of
         [<<"external">>, HandlerIdentifier, Ref, Args] ->
             dispatch_external(HandlerIdentifier, Ref, Args, Handlers,
                               HandlerContext);
         [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8:call(VM, <<"__internal.handleExternal">>,
+            {ok, Actions} = erlang_v8:call(VM, Context,
+                                           <<"__internal.handleExternal">>,
                                            [Status, Ref, Args]),
             Actions;
         Other ->
             io:format("Other: ~p~n", [Other]),
             []
     end,
-    unwind(VM, NewActions ++ T, Handlers, HandlerContext).
+    unwind({Context, VM}, NewActions ++ T, Handlers, HandlerContext).
 
 dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
     case dict:find(HandlerIdentifier, Handlers) of

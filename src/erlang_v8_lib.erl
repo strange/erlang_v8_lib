@@ -2,8 +2,16 @@
 
 -export([run/1]).
 -export([run/2]).
+-export([t/0]).
 
 -define(TIMEOUT, 15000).
+
+t() ->
+    application:ensure_all_started(erlang_v8_lib),
+    R = [run(<<"var x = 1; x">>) || _ <- lists:seq(1, 100)],
+    io:format("Ran 100 tests: ~p~n", [R]),
+    timer:sleep(500),
+    t().
 
 run(Source) ->
     run(Source, #{}, ?TIMEOUT).
