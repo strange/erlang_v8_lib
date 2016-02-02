@@ -4,7 +4,11 @@
 
 run([URL, Method, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
-    Opts = [],
+    Opts = [
+        {connect_timeout, 20000},
+        {recv_timeout, 20000}
+    ],
+    %% Opts = [],
     Headers = [],
     Now = erlang:timestamp(),
     case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
@@ -19,7 +23,9 @@ run([URL, Method, Payload], _HandlerContext) ->
         {error, nxdomain} ->
             {error, <<"Invalid domain.">>};
         {error, closed} ->
-            {error, <<"Socket closed.">>};
+            {error, <<"HTTP Socket closed.">>};
+        {error, timeout} ->
+            {error, <<"HTTP request timed out">>};
         Other ->
             lager:info("Unspecified HTTP error: ~p", [Other]),
             {error, <<"Unspecified HTTP error.">>}

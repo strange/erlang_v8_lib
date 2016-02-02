@@ -23,10 +23,8 @@ unwind({Context, VM}, [{init, Source}], Handlers, HandlerContext) ->
     ">>) of
         {ok, Actions} ->
             unwind({Context, VM}, Actions, Handlers, HandlerContext);
-        {error, Reason} when is_binary(Reason) ->
-            {error, Reason};
-        _Other ->
-            {error, <<"Script error.">>}
+        {error, Reason} ->
+            {error, Reason}
     end;
 
 unwind({Context, VM}, [Action|T], Handlers, HandlerContext) ->
