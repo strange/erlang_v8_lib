@@ -26,6 +26,8 @@ run([URL, Method, Payload], _HandlerContext) ->
             {error, <<"HTTP Socket closed.">>};
         {error, timeout} ->
             {error, <<"HTTP request timed out">>};
+        {error, connect_timeout} ->
+            {error, <<"HTTP connection timed out">>};
         Other ->
             lager:info("Unspecified HTTP error: ~p", [Other]),
             {error, <<"Unspecified HTTP error.">>}
