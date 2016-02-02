@@ -23,7 +23,7 @@ pool_spec() ->
                  Path = code:priv_dir(Appname),
                  filename:join(Path, Filename)
              end || {Appname, Filename} <- Core ++ Modules],
-    PoolArgs = [{size, 1}, {max_overflow, 1},
+    PoolArgs = [{size, 50}, {max_overflow, 10},
                 {name, {local, v8_worker_pool}},
                 {worker_module, erlang_v8_lib_worker}],
     WorkerArgs = [Files, Handlers],
