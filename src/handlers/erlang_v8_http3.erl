@@ -17,14 +17,16 @@ run([URL, Method, Payload], _HandlerContext) ->
                     {error, <<"Error reading body.">>}
             end;
         {error, nxdomain} ->
-            {error, <<"Invalid domain">>};
+            {error, <<"Invalid domain.">>};
+        {error, closed} ->
+            {error, <<"Socket closed.">>};
         Other ->
-            io:format("Other: ~p~n", [Other]),
-            {error, <<"Unkown error.">>}
+            lager:info("Unspecified HTTP error: ~p", [Other]),
+            {error, <<"Unspecified HTTP error.">>}
     end.
 
-clean_method(<<"post">>) -> post;
 clean_method(<<"POST">>) -> post;
-clean_method(<<"get">>) -> get;
+clean_method(<<"post">>) -> post;
 clean_method(<<"GET">>) -> get;
+clean_method(<<"get">>) -> get;
 clean_method(_Other) -> get.
