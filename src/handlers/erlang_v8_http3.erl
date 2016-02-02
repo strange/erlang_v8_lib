@@ -5,10 +5,9 @@
 run([URL, Method, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Opts = [
-        {connect_timeout, 20000},
-        {recv_timeout, 20000}
+        {connect_timeout, 4000},
+        {recv_timeout, 4000}
     ],
-    %% Opts = [],
     Headers = [],
     Now = erlang:timestamp(),
     case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
