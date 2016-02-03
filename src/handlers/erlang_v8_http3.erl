@@ -5,10 +5,10 @@
 run([URL, Method, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Opts = [
-        {connect_timeout, 4000},
-        {recv_timeout, 4000}
+        {connect_timeout, 6000},
+        {recv_timeout, 6000}
     ],
-    Headers = [],
+    Headers = [{<<"User-Agent">>, <<"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36">>}],
     Now = erlang:timestamp(),
     case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
@@ -29,6 +29,8 @@ run([URL, Method, Payload], _HandlerContext) ->
             {error, <<"HTTP connection timed out">>};
         {error, ehostunreach} ->
             {error, <<"HTTP host not reachable">>};
+        %% {error, enetunreach} ->
+        %%     {error, <<"HTTP net not reachable">>};
         Other ->
             lager:info("Unspecified HTTP error: ~p", [Other]),
             {error, <<"Unspecified HTTP error.">>}
