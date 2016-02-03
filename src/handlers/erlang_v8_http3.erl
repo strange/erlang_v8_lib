@@ -29,6 +29,8 @@ run([URL, Method, Payload], _HandlerContext) ->
             {error, <<"HTTP connection timed out">>};
         {error, ehostunreach} ->
             {error, <<"HTTP host not reachable">>};
+        {error, econnrefused} ->
+            {error, <<"HTTP connection refused.">>};
         %% {error, enetunreach} ->
         %%     {error, <<"HTTP net not reachable">>};
         Other ->
