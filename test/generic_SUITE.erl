@@ -14,9 +14,9 @@
 
 all() ->
     [
-        console_log,
-        context,
-        return
+        %% console_log,
+        %% context,
+        %% return
     ].
 
 init_per_suite(Config) ->

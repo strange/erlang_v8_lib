@@ -2,15 +2,15 @@
 
 -export([run/2]).
 
-run([URL, Method, Payload], _HandlerContext) ->
+run([URL, Method, Headers, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Opts = [
         {connect_timeout, 4000},
         {recv_timeout, 4000}
     ],
-    Headers = [],
     Now = erlang:timestamp(),
-    case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
+    H = clean_headers(Headers),
+    case hackney:request(clean_method(Method), URL, H, Payload, Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
@@ -19,6 +19,9 @@ run([URL, Method, Payload], _HandlerContext) ->
                 {error, _Error} ->
                     {error, <<"Error reading body.">>}
             end;
+        {ok, Code, _RespHeaders} ->
+            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
+            {ok, #{ code => Code, time => Time }};
         {error, nxdomain} ->
             {error, <<"Invalid domain.">>};
         {error, closed} ->
@@ -30,12 +33,23 @@ run([URL, Method, Payload], _HandlerContext) ->
         {error, ehostunreach} ->
             {error, <<"HTTP host not reachable">>};
         Other ->
-            lager:info("Unspecified HTTP error: ~p", [Other]),
+            io:format("Unspecified HTTP error: ~p~n", [Other]),
             {error, <<"Unspecified HTTP error.">>}
     end.
 
 clean_method(<<"POST">>) -> post;
 clean_method(<<"post">>) -> post;
+clean_method(<<"PUT">>) -> put;
+clean_method(<<"put">>) -> put;
 clean_method(<<"GET">>) -> get;
 clean_method(<<"get">>) -> get;
+clean_method(<<"DELETE">>) -> delete;
+clean_method(<<"delete">>) -> delete;
+clean_method(<<"HEAD">>) -> head;
+clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
+
+clean_headers(<<"[]">>) -> [];
+clean_headers(Headers) ->
+    [H|_] = jsx:decode(Headers),
+    H.
