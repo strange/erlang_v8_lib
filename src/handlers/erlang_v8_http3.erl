@@ -8,7 +8,10 @@ run([URL, Method, Payload], _HandlerContext) ->
         {connect_timeout, 6000},
         {recv_timeout, 6000}
     ],
-    Headers = [{<<"User-Agent">>, <<"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36">>}],
+    Headers = [
+        {<<"User-Agent">>, <<"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36">>},
+        {<<"Connection">>, <<"close">>}
+    ],
     Now = erlang:timestamp(),
     case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
