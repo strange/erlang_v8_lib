@@ -34,7 +34,9 @@ end_per_suite(_Config) ->
 
 get(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get', {test: 'fest'}).then(function(data) {
+    http.get('http://httpbin.org/get', {
+                   payload: {test: 'fest'},
+               }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -66,9 +68,10 @@ get(_Config) ->
     true = is_number(maps:get(<<"time">>, Data3)),
 
     {ok, Data4} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get',
-             [{'Content-Type': 'application/json'}],
-             {test: 'fest'}).then(function(data) {
+    http.get('http://httpbin.org/get', {
+                 headers: {'Content-Type': 'application/json'},
+                 payload: {test: 'fest'}
+             }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -77,20 +80,22 @@ get(_Config) ->
         jsx:decode(Body4, [return_maps]),
 
     {ok, Data5} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get?test=fest',
-             [{'Content-Type': 'application/json'}]).then(function(data) {
+    http.get('http://httpbin.org/get?test=fest', {
+                 headers: {'Connection': 'close'}
+             }).then(function(data) {
         process.return(data);
     });
     ">>),
     #{ <<"body">> := Body5 } = Data5,
     #{ <<"args">> := #{ <<"test">> := <<"fest">> } } =
         jsx:decode(Body5, [return_maps]),
-
     ok.
 
 post(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', 'hello').then(function(data) {
+    http.post('http://httpbin.org/post', {
+                  payload : 'hello'
+              }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -98,9 +103,10 @@ post(_Config) ->
     #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
 
     {ok, Data1} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post',
-               [{'Content-Type': 'application/json'}],
-               'hello').then(function(data) {
+    http.post('http://httpbin.org/post', {
+                   headers: {'Content-Type': 'application/json'},
+                   payload: 'hello',
+               }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -108,21 +114,27 @@ post(_Config) ->
     #{ <<"data">> := <<"hello">> } = jsx:decode(Body1, [return_maps]),
 
     {ok, Data2} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post',
-               [{'Content-Type': 'application/json', Connection:
-               'keep-alive'}], 'hello').then(function(data) {
+    http.post('http://httpbin.org/post', {
+                   headers: {
+                       'Content-Type': 'application/json',
+                       'Connection': 'close'
+                   },
+                   payload: 'hello',
+               }).then(function(data) {
         process.return(data);
     });
     ">>),
     #{ <<"body">> := Body2 } = Data2,
     #{ <<"data">> := <<"hello">> } = jsx:decode(Body2, [return_maps]),
+
     ok.
 
 put(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.put('http://httpbin.org/put',
-               [{'Content-Type': 'application/json'}],
-               'hello').then(function(data) {
+    http.put('http://httpbin.org/put', {
+                 headers: {'Content-Type': 'application/json'},
+                 payload: 'hello'
+             }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -134,9 +146,10 @@ put(_Config) ->
 
 delete(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.delete('http://httpbin.org/delete',
-               [{'Content-Type': 'application/json'}],
-               'hello').then(function(data) {
+    http.delete('http://httpbin.org/delete', {
+                    headers: {'Content-Type': 'application/json'},
+                    payload: 'hello'
+                }).then(function(data) {
         process.return(data);
     });
     ">>),

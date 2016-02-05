@@ -4,13 +4,14 @@
 
 run([URL, Method, Headers, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
+    io:format("headers: ~p~n", [Headers]),
     Opts = [
         {connect_timeout, 4000},
         {recv_timeout, 4000}
     ],
     Now = erlang:timestamp(),
-    H = clean_headers(Headers),
-    case hackney:request(clean_method(Method), URL, H, Payload, Opts) of
+    case hackney:request(clean_method(Method), URL, clean_headers(Headers),
+                         Payload, Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
@@ -49,7 +50,5 @@ clean_method(<<"HEAD">>) -> head;
 clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
 
-clean_headers(<<"[]">>) -> [];
-clean_headers(Headers) ->
-    [H|_] = jsx:decode(Headers),
-    H.
+clean_headers(<<"{}">>) -> [];
+clean_headers(Headers) -> jsx:decode(Headers).
