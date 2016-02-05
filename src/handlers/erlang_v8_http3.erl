@@ -4,7 +4,6 @@
 
 run([URL, Method, Headers, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
-    io:format("headers: ~p~n", [Headers]),
     Opts = [
         {connect_timeout, 4000},
         {recv_timeout, 4000}
