@@ -12,13 +12,15 @@ var http = {};
     };
 
     function formatQueryParams(params) {
-        var qs = '?';
+        var prefix = '?';
+        var qs = '';
         for (var k in params) {
             if (params.hasOwnProperty(k)) {
-                qs += k.toString() + '=' + params[k].toString() + '&';
+                qs += prefix + k.toString() + '=' + params[k].toString();
+                prefix = '&';
             }
         }
-        return qs.substring(0, qs.length-1);
+        return qs;
     }
 
     http.request = function(method, url, data) {
