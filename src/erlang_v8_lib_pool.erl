@@ -7,6 +7,7 @@
 -export([claim/0]).
 -export([release/1]).
 -export([eval/2]).
+-export([call/3]).
 
 -export([init/1]).
 -export([handle_call/3]).
@@ -23,15 +24,27 @@ start_link() ->
 claim() ->
     gen_server:call(?MODULE, {claim, self()}, 2000).
 
-release(Context) ->
+release({_VM, Context}) ->
     gen_server:call(?MODULE, {release, Context}, 2000).
 
-eval(Context, Source) ->
-    gen_server:call(?MODULE, {eval, Context, Source}, 2000).
+eval({VM, Context}, Source) ->
+    erlang_v8:eval(VM, Context, Source).
+
+call({VM, Context}, Fun, Args) ->
+    erlang_v8:call(VM, Context, Fun, Args).
 
 init([MaxContexts, NVMs]) ->
     process_flag(trap_exit, true),
-    Files = [],
+    {ok, Core} = application:get_env(erlang_v8_lib, core),
+    DefaultModules = application:get_env(erlang_v8_lib, default_modules, []),
+    LocalModules = application:get_env(erlang_v8_lib, local_modules, []),
+    Modules = [{App, Mod} || {_Key, App, Mod} <-
+               erlang_v8_lib_utils:extend(1, DefaultModules, LocalModules)],
+    Files = [begin
+                 Path = code:priv_dir(Appname),
+                 filename:join(Path, Filename)
+             end || {Appname, Filename} <- Core ++ Modules],
+
     VMs = lists:map(fun(_) ->
         {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
         VM
@@ -45,7 +58,7 @@ handle_call({claim, _Pid}, _From, #state{vms = VMs, in_use = Contexts} = State) 
     VM = random_vm(VMs),
     {ok, Context} = erlang_v8_vm:create_context(VM),
     UpdatedContexts = dict:store(Context, VM, Contexts),
-    {reply, {ok, Context}, State#state{ in_use = UpdatedContexts }};
+    {reply, {ok, {VM, Context}}, State#state{ in_use = UpdatedContexts }};
 
 handle_call({release, Context}, _From, #state{in_use = Contexts} = State) ->
     VM = dict:fetch(Context, Contexts),
@@ -53,10 +66,10 @@ handle_call({release, Context}, _From, #state{in_use = Contexts} = State) ->
     UpdatedContexts = dict:erase(Context, Contexts),
     {reply, ok, State#state{ in_use = UpdatedContexts }};
 
-handle_call({eval, Context, Source}, _From, #state{in_use = Contexts} = State) ->
-    VM = dict:fetch(Context, Contexts),
-    Reply = erlang_v8:eval(VM, Context, Source),
-    {reply, Reply, State};
+%% handle_call({eval, Context, Source}, _From, #state{in_use = Contexts} = State) ->
+%%     VM = dict:fetch(Context, Contexts),
+%%     Reply = erlang_v8:eval(VM, Context, Source),
+%%     {reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.

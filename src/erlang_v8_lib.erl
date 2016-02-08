@@ -18,5 +18,7 @@ run(Source, Context) when is_map(Context) ->
     run(Source, Context, ?TIMEOUT).
 
 run(Source, Context, Timeout) ->
-    {ok, Handlers} = application:get_env(erlang_v8_lib, handlers),
+    DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
+    LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
+    Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
     erlang_v8_lib_run:run(Source, Handlers, Context, Timeout + 500).
