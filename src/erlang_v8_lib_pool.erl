@@ -16,7 +16,7 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {max_contexts, vms, in_use}).
+-record(state, {max_contexts, vms}).
 
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [10000, 50], []).
@@ -51,7 +51,7 @@ init([MaxContexts, NVMs]) ->
         VM
     end, lists:seq(1, NVMs)),
 
-    {ok, #state{max_contexts = MaxContexts, vms = VMs, in_use = dict:new()}}.
+    {ok, #state{max_contexts = MaxContexts, vms = VMs}}.
 
 random_vm(VMs) ->
     lists:nth(random:uniform(length(VMs)), VMs).
