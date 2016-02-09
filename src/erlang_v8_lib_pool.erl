@@ -24,8 +24,8 @@ start_link() ->
 claim() ->
     gen_server:call(?MODULE, {claim, self()}, 2000).
 
-release({_VM, Context}) ->
-    gen_server:call(?MODULE, {release, Context}, 2000).
+release({VM, Context}) ->
+    gen_server:call(?MODULE, {release, VM, Context}, 2000).
 
 eval({VM, Context}, Source) ->
     erlang_v8:eval(VM, Context, Source).
@@ -34,7 +34,8 @@ call({VM, Context}, Fun, Args) ->
     erlang_v8:call(VM, Context, Fun, Args).
 
 init([MaxContexts, NVMs]) ->
-    process_flag(trap_exit, true),
+    ets:new(?MODULE, [duplicate_bag, named_table]),
+
     {ok, Core} = application:get_env(erlang_v8_lib, core),
     DefaultModules = application:get_env(erlang_v8_lib, default_modules, []),
     LocalModules = application:get_env(erlang_v8_lib, local_modules, []),
@@ -49,33 +50,39 @@ init([MaxContexts, NVMs]) ->
         {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
         VM
     end, lists:seq(1, NVMs)),
+
     {ok, #state{max_contexts = MaxContexts, vms = VMs, in_use = dict:new()}}.
 
 random_vm(VMs) ->
     lists:nth(random:uniform(length(VMs)), VMs).
 
-handle_call({claim, _Pid}, _From, #state{vms = VMs, in_use = Contexts} = State) ->
+handle_call({claim, Pid}, _From, #state{vms = VMs} = State) ->
+    Ref = erlang:monitor(process, Pid),
     VM = random_vm(VMs),
     {ok, Context} = erlang_v8_vm:create_context(VM),
-    UpdatedContexts = dict:store(Context, VM, Contexts),
-    {reply, {ok, {VM, Context}}, State#state{ in_use = UpdatedContexts }};
+    ets:insert(?MODULE, {Pid, VM, Context, Ref}),
+    {reply, {ok, {VM, Context}}, State};
 
-handle_call({release, Context}, _From, #state{in_use = Contexts} = State) ->
-    VM = dict:fetch(Context, Contexts),
+handle_call({release, VM, Context}, {Pid, _Ref}, State) ->
+    Pattern = {Pid, '_', Context, '_'},
+    [{_Pid, VM, Context, Ref}] = ets:match_object(?MODULE, Pattern),
     ok = erlang_v8_vm:destroy_context(VM, Context),
-    UpdatedContexts = dict:erase(Context, Contexts),
-    {reply, ok, State#state{ in_use = UpdatedContexts }};
-
-%% handle_call({eval, Context, Source}, _From, #state{in_use = Contexts} = State) ->
-%%     VM = dict:fetch(Context, Contexts),
-%%     Reply = erlang_v8:eval(VM, Context, Source),
-%%     {reply, Reply, State};
+    true = erlang:demonitor(Ref),
+    true = ets:match_delete(?MODULE, Pattern),
+    {reply, ok, State};
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
+
+handle_info({'DOWN', Ref, process, Pid, _Reason}, State) ->
+    Pattern = {Pid, '_', '_', Ref},
+    [{Pid, VM, Context, Ref}] = ets:match_object(?MODULE, Pattern),
+    ok = erlang_v8_vm:destroy_context(VM, Context),
+    true = ets:match_delete(?MODULE, Pattern),
+    {noreply, State};
 
 handle_info(_Info, State) ->
     {noreply, State}.
