@@ -1,12 +1,14 @@
 -module(erlang_v8_lib_run).
 
--export([run/4]).
+-export([run/2]).
 
-run(Source, Handlers, HandlerContext, _Timeout) when is_binary(Source) ->
+run(Source, Opts) when is_binary(Source) ->
+    HandlerContext = maps:get(handler_context, Opts, #{}),
+    Handlers = maps:from_list(maps:get(handlers, Opts, [])),
+    Context = maps:get(context, Opts, #{}),
     {ok, VM} = erlang_v8_lib_pool:claim(),
-    {ok, _} = erlang_v8_lib_pool:call(VM, <<"__internal.setContext">>,
-                                      [HandlerContext]),
-    unwind(VM, [{init, Source}], dict:from_list(Handlers), HandlerContext).
+    {ok, _} = erlang_v8_lib_pool:call(VM, <<"__internal.setContext">>, [Context]),
+    unwind(VM, [{init, Source}], Handlers, HandlerContext).
 
 unwind(VM, [], _Handlers, _HandlerContext) ->
     ok = erlang_v8_lib_pool:release(VM),
@@ -47,10 +49,10 @@ unwind(VM, [Action|T], Handlers, HandlerContext) ->
     unwind(VM, NewActions ++ T, Handlers, HandlerContext).
 
 dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
-    case dict:find(HandlerIdentifier, Handlers) of
-        error ->
-            {error, <<"Invalid external handler.">>};
-        {ok, HandlerMod} ->
+    case maps:get(HandlerIdentifier, Handlers, undefined) of
+        undefined ->
+            [[callback, <<"error">>, Ref, <<"Invalid external handler.">>]];
+        HandlerMod ->
             case HandlerMod:run(Args, HandlerContext) of
                 {ok, Response} ->
                     [[callback, <<"success">>, Ref, Response]];

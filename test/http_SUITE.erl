@@ -30,7 +30,9 @@ get(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get?test=fest').then(function(data) {
         process.return(data);
-    });
+    }).catch(function(err) {
+        process.return(err);
+    });;
     ">>),
     #{ <<"body">> := Body0 } = Data0,
     #{ <<"args">> := #{ <<"test">> := <<"fest">> } } =

@@ -20,6 +20,7 @@
         {default_modules, [
             {<<"http">>, erlang_v8_lib, "http.js"},
             {<<"console">>, erlang_v8_lib, "console.js"},
+            {<<"event">>, erlang_v8_lib, "event.js"},
             {<<"context">>, erlang_v8_lib, "context.js"}
         ]},
         {default_handlers, [

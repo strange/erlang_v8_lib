@@ -35,10 +35,9 @@ console_log(_Config) ->
 context(_Config) ->
     {ok, <<"abc">>} = erlang_v8_lib:run(
                         <<"process.return(Context.get().type);">>,
-                        [{type, <<"abc">>}]),
+                        #{ context => #{ type => <<"abc">> } }),
     ok.
 
 return(_Config) ->
     {ok, 1} = erlang_v8_lib:run(<<"process.return(1);">>),
     ok.
-
