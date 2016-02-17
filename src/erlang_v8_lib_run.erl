@@ -8,18 +8,18 @@ run(Instructions, Opts) ->
     Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
     HandlerContext = maps:get(handler_context, Opts, #{}),
     {ok, VM} = erlang_v8_lib_pool:claim(),
-    R = run(1,VM, Instructions, maps:from_list(Handlers), HandlerContext),
+    R = run(VM, Instructions, maps:from_list(Handlers), HandlerContext),
     ok = erlang_v8_lib_pool:release(VM),
     R.
 
-run(Run, VM, [Instruction|Instructions], Handlers, HandlerContext) ->
+run(VM, [Instruction|Instructions], Handlers, HandlerContext) ->
     case unwind(VM, [Instruction], Handlers, HandlerContext) of
         {error, Reason} ->
             {error, Reason};
         Other when length(Instructions) =:= 0 ->
             Other;
         _Other ->
-            run(Run + 1, VM, Instructions, Handlers, HandlerContext)
+            run(VM, Instructions, Handlers, HandlerContext)
     end.
 
 unwind(_VM, [], _Handlers, _HandlerContext) ->
