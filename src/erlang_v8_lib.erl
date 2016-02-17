@@ -6,9 +6,8 @@
 run(Source) ->
     run(Source, #{}).
 
-run(Source, Opts) when is_map(Opts) ->
-    DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
-    LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
-    Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
-    NewOpts = Opts#{ handlers => Handlers },
-    erlang_v8_lib_run:run(Source, NewOpts).
+run(Source, Opts) when is_binary(Source) ->
+    run([{eval, Source}], Opts);
+
+run(Instructions, Opts) when is_map(Opts) ->
+    erlang_v8_lib_run:run(Instructions, Opts).

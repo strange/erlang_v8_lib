@@ -7,6 +7,7 @@
 -export([end_per_suite/1]).
 
 -export([console_log/1]).
+-export([instructions/1]).
 -export([return/1]).
 -export([context/1]).
 
@@ -14,9 +15,10 @@
 
 all() ->
     [
-        console_log,
-        context,
-        return
+        %% console_log,
+        instructions,
+        context
+        %% return
     ].
 
 init_per_suite(Config) ->
@@ -32,10 +34,18 @@ console_log(_Config) ->
     ok = erlang_v8_lib:run(<<"console.log('test');">>),
     ok.
 
+instructions(_Config) ->
+    {ok, 1} = erlang_v8_lib:run([
+        {eval, <<"function lol() { process.return(1); }">>},
+        {call, <<"lol">>, []}
+    ]),
+    ok.
+
 context(_Config) ->
-    {ok, <<"abc">>} = erlang_v8_lib:run(
-                        <<"process.return(Context.get().type);">>,
-                        #{ context => #{ type => <<"abc">> } }),
+    {ok, <<"abc">>} = erlang_v8_lib:run([
+        {context, #{ type => <<"abc">> }},
+        {eval, <<"process.return(Context.get().type);">>}
+    ]),
     ok.
 
 return(_Config) ->

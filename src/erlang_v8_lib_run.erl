@@ -2,35 +2,68 @@
 
 -export([run/2]).
 
-run(Source, Opts) when is_binary(Source) ->
+run(Instructions, Opts) ->
+    DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
+    LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
+    Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
     HandlerContext = maps:get(handler_context, Opts, #{}),
-    Handlers = maps:from_list(maps:get(handlers, Opts, [])),
-    Context = maps:get(context, Opts, #{}),
     {ok, VM} = erlang_v8_lib_pool:claim(),
-    {ok, _} = erlang_v8_lib_pool:call(VM, <<"__internal.setContext">>, [Context]),
-    unwind(VM, [{init, Source}], Handlers, HandlerContext).
-
-unwind(VM, [], _Handlers, _HandlerContext) ->
+    R = run(1,VM, Instructions, maps:from_list(Handlers), HandlerContext),
     ok = erlang_v8_lib_pool:release(VM),
+    R.
+
+run(Run, VM, [Instruction|Instructions], Handlers, HandlerContext) ->
+    case unwind(VM, [Instruction], Handlers, HandlerContext) of
+        {error, Reason} ->
+            {error, Reason};
+        Other when length(Instructions) =:= 0 ->
+            Other;
+        _Other ->
+            run(Run + 1, VM, Instructions, Handlers, HandlerContext)
+    end.
+
+unwind(_VM, [], _Handlers, _HandlerContext) ->
     ok;
 
-unwind(VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
-    ok = erlang_v8_lib_pool:release(VM),
-    {ok, jsx:decode(jsx:encode(Value), [return_maps])};
+unwind(VM, [{context, Context}], _Handlers, _HandlerContext) ->
+    case erlang_v8_lib_pool:call(VM, <<"__internal.setContext">>, [Context]) of
+        {error, Reason} ->
+            {error, Reason};
+        {ok, undefined} ->
+            ok
+    end;
 
-unwind(VM, [{init, Source}], Handlers, HandlerContext) ->
+unwind(VM, [{call, Fun, Args}], Handlers, HandlerContext) ->
+    {ok, []} = erlang_v8_lib_pool:eval(VM, <<"__internal.actions = [];">>),
+    case erlang_v8_lib_pool:call(VM, Fun, Args) of
+        {error, Reason} ->
+            {error, Reason};
+        {ok, undefined} ->
+            case erlang_v8_lib_pool:eval(VM, <<"__internal.actions;">>) of
+                {ok, Actions} ->
+                    unwind(VM, Actions, Handlers, HandlerContext);
+                {error, Reason} ->
+                    {error, Reason}
+            end;
+        {ok, Value} ->
+            %% TODO: What about returned values? Treat as a regular return?
+            {ok, jsx:decode(jsx:encode(Value), [return_maps])}
+    end;
+
+unwind(VM, [{eval, Source}], Handlers, HandlerContext) ->
     case erlang_v8_lib_pool:eval(VM, <<"
-        (function() {
-            __internal.actions = [];
-            ", Source/binary, "
-            return __internal.actions;
-        })();
+        __internal.actions = [];
+        ", Source/binary, "
+        __internal.actions;
     ">>) of
         {ok, Actions} ->
             unwind(VM, Actions, Handlers, HandlerContext);
         {error, Reason} ->
             {error, Reason}
     end;
+
+unwind(_VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
+    {ok, jsx:decode(jsx:encode(Value), [return_maps])};
 
 unwind(VM, [Action|T], Handlers, HandlerContext) ->
     NewActions = case Action of
