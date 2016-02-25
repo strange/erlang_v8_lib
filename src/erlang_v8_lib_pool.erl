@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0]).
+-export([start_link/1]).
 
 -export([claim/0]).
 -export([release/1]).
@@ -18,8 +18,8 @@
 
 -record(state, {max_contexts, vms}).
 
-start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [10000, 50], []).
+start_link(VMs) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [10000, VMs], []).
 
 claim() ->
     {ok, VM, Ref} = gen_server:call(?MODULE, {claim, self()}, 2000),
