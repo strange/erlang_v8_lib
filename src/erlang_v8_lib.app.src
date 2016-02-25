@@ -17,17 +17,15 @@
             {erlang_v8_lib, "promise.js"},
             {erlang_v8_lib, "base.js"}
         ]},
-        {default_modules, [
-            {<<"http">>, erlang_v8_lib, "http.js"},
-            {<<"console">>, erlang_v8_lib, "console.js"},
-            {<<"event">>, erlang_v8_lib, "event.js"},
-            {<<"context">>, erlang_v8_lib, "context.js"}
+        {modules, [
+            {erlang_v8_lib, "http.js"},
+            {erlang_v8_lib, "console.js"},
+            {erlang_v8_lib, "event.js"},
+            {erlang_v8_lib, "context.js"}
         ]},
-        {default_handlers, [
+        {handlers, [
             {<<"console">>, erlang_v8_stdout_console},
             {<<"http">>, erlang_v8_http3}
-        ]},
-        {local_modules, []},
-        {local_handlers, []}
+        ]}
     ]}
 ]}.

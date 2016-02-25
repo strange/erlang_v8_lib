@@ -16,6 +16,13 @@ start_link(Opts) ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, [Opts]).
 
 init([Opts]) ->
-    VMs = maps:get(vms, Opts, 50),
-    Children = [?CHILD(erlang_v8_lib_pool, worker, [VMs])],
-	{ok, {{one_for_one, 3, 10}, Children}}.
+    SupFlags = #{
+        strategy => one_for_one,
+        intensity => 3,
+        period => 10
+    },
+    ChildSpecs = [#{
+        id => erlang_v8_lib_pool,
+        start => {erlang_v8_lib_pool, start_link, [Opts]}
+    }],
+    {ok, {SupFlags, ChildSpecs}}.

@@ -3,45 +3,43 @@
 -export([run/2]).
 
 run(Instructions, Opts) ->
-    DefaultHandlers = application:get_env(erlang_v8_lib, default_handlers, []),
-    LocalHandlers = application:get_env(erlang_v8_lib, local_handlers, []),
-    Handlers = erlang_v8_lib_utils:extend(1, DefaultHandlers, LocalHandlers),
     HandlerContext = maps:get(handler_context, Opts, #{}),
-    {ok, VM} = erlang_v8_lib_pool:claim(),
-    R = run(VM, Instructions, maps:from_list(Handlers), HandlerContext),
-    ok = erlang_v8_lib_pool:release(VM),
+    {ok, Worker} = erlang_v8_lib_pool:claim(),
+    R = run(Worker, Instructions, HandlerContext),
+    ok = erlang_v8_lib_pool:release(Worker),
     R.
 
-run(VM, [Instruction|Instructions], Handlers, HandlerContext) ->
-    case unwind(VM, [Instruction], Handlers, HandlerContext) of
+run(Worker, [Instruction|Instructions], HandlerContext) ->
+    case unwind(Worker, [Instruction], HandlerContext) of
         {error, Reason} ->
             {error, Reason};
         Other when length(Instructions) =:= 0 ->
             Other;
         _Other ->
-            run(VM, Instructions, Handlers, HandlerContext)
+            run(Worker, Instructions, HandlerContext)
     end.
 
-unwind(_VM, [], _Handlers, _HandlerContext) ->
+unwind(_Worker, [], _HandlerContext) ->
     ok;
 
-unwind(VM, [{context, Context}], _Handlers, _HandlerContext) ->
-    case erlang_v8_lib_pool:call(VM, <<"__internal.setContext">>, [Context]) of
+unwind(Worker, [{context, Context}], _HandlerContext) ->
+    case erlang_v8_lib_pool:call(Worker,
+                                 <<"__internal.setContext">>, [Context]) of
         {error, Reason} ->
             {error, Reason};
         {ok, undefined} ->
             ok
     end;
 
-unwind(VM, [{call, Fun, Args}], Handlers, HandlerContext) ->
-    {ok, []} = erlang_v8_lib_pool:eval(VM, <<"__internal.actions = [];">>),
-    case erlang_v8_lib_pool:call(VM, Fun, Args) of
+unwind(Worker, [{call, Fun, Args}], HandlerContext) ->
+    {ok, []} = erlang_v8_lib_pool:eval(Worker, <<"__internal.actions = [];">>),
+    case erlang_v8_lib_pool:call(Worker, Fun, Args) of
         {error, Reason} ->
             {error, Reason};
         {ok, undefined} ->
-            case erlang_v8_lib_pool:eval(VM, <<"__internal.actions;">>) of
+            case erlang_v8_lib_pool:eval(Worker, <<"__internal.actions;">>) of
                 {ok, Actions} ->
-                    unwind(VM, Actions, Handlers, HandlerContext);
+                    unwind(Worker, Actions, HandlerContext);
                 {error, Reason} ->
                     {error, Reason}
             end;
@@ -50,28 +48,28 @@ unwind(VM, [{call, Fun, Args}], Handlers, HandlerContext) ->
             {ok, jsx:decode(jsx:encode(Value), [return_maps])}
     end;
 
-unwind(VM, [{eval, Source}], Handlers, HandlerContext) ->
-    case erlang_v8_lib_pool:eval(VM, <<"
+unwind(Worker, [{eval, Source}], HandlerContext) ->
+    case erlang_v8_lib_pool:eval(Worker, <<"
         __internal.actions = [];
         ", Source/binary, "
         __internal.actions;
     ">>) of
         {ok, Actions} ->
-            unwind(VM, Actions, Handlers, HandlerContext);
+            unwind(Worker, Actions, HandlerContext);
         {error, Reason} ->
             {error, Reason}
     end;
 
-unwind(_VM, [[<<"return">>, Value]|_], _Handlers, _HandlerContext) ->
+unwind(_Worker, [[<<"return">>, Value]|_], _HandlerContext) ->
     {ok, jsx:decode(jsx:encode(Value), [return_maps])};
 
-unwind(VM, [Action|T], Handlers, HandlerContext) ->
+unwind({_VM, _Context, Handlers} = Worker, [Action|T], HandlerContext) ->
     NewActions = case Action of
         [<<"external">>, HandlerIdentifier, Ref, Args] ->
             dispatch_external(HandlerIdentifier, Ref, Args, Handlers,
                               HandlerContext);
         [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8_lib_pool:call(VM, 
+            {ok, Actions} = erlang_v8_lib_pool:call(Worker, 
                                            <<"__internal.handleExternal">>,
                                            [Status, Ref, Args]),
             Actions;
@@ -79,7 +77,7 @@ unwind(VM, [Action|T], Handlers, HandlerContext) ->
             io:format("Other: ~p~n", [Other]),
             []
     end,
-    unwind(VM, NewActions ++ T, Handlers, HandlerContext).
+    unwind(Worker, NewActions ++ T, HandlerContext).
 
 dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
     case maps:get(HandlerIdentifier, Handlers, undefined) of

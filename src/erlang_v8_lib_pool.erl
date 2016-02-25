@@ -16,27 +16,31 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
--record(state, {max_contexts, vms}).
+-record(state, {
+    max_contexts,
+    handlers,
+    vms
+}).
 
-start_link(VMs) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [10000, VMs], []).
+start_link(Opts) ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [Opts], []).
 
 claim() ->
-    {ok, VM, Ref} = gen_server:call(?MODULE, {claim, self()}, 2000),
+    {ok, VM, Ref, Handlers} = gen_server:call(?MODULE, {claim, self()}, 2000),
     {ok, Context} = erlang_v8_vm:create_context(VM),
     ets:insert(?MODULE, {self(), VM, Context, Ref}),
-    {ok, {VM, Context}}.
+    {ok, {VM, Context, Handlers}}.
 
-release({VM, Context}) ->
+release({VM, Context, _Handlers}) ->
     gen_server:call(?MODULE, {release, VM, Context}, 2000).
 
-eval({VM, Context}, Source) ->
+eval({VM, Context, _Handlers}, Source) ->
     erlang_v8:eval(VM, Context, Source).
 
-call({VM, Context}, Fun, Args) ->
+call({VM, Context, _Handlers}, Fun, Args) ->
     erlang_v8:call(VM, Context, Fun, Args).
 
-init([MaxContexts, NVMs]) ->
+init([Opts]) ->
     ets:new(?MODULE, [
         duplicate_bag,
         named_table,
@@ -44,30 +48,21 @@ init([MaxContexts, NVMs]) ->
         {write_concurrency, true}
     ]),
 
-    {ok, Core} = application:get_env(erlang_v8_lib, core),
-    DefaultModules = application:get_env(erlang_v8_lib, default_modules, []),
-    LocalModules = application:get_env(erlang_v8_lib, local_modules, []),
-    Modules = [{App, Mod} || {_Key, App, Mod} <-
-               erlang_v8_lib_utils:extend(1, DefaultModules, LocalModules)],
-    Files = [begin
-                 Path = code:priv_dir(Appname),
-                 filename:join(Path, Filename)
-             end || {Appname, Filename} <- Core ++ Modules],
+    {ok, NVMs, Files, Handlers} = parse_opts(Opts),
 
+    Args = [{file, File} || File <- Files],
     VMs = lists:map(fun(_) ->
-        {ok, VM} = erlang_v8:start_vm([{file, File} || File <- Files]),
+        {ok, VM} = erlang_v8_lib_vm_sup:start_child(Args),
         VM
     end, lists:seq(1, NVMs)),
 
-    {ok, #state{max_contexts = MaxContexts, vms = VMs}}.
+    {ok, #state{vms = VMs, handlers = Handlers}}.
 
-random_vm(VMs) ->
-    lists:nth(random:uniform(length(VMs)), VMs).
-
-handle_call({claim, Pid}, _From, #state{vms = VMs} = State) ->
+handle_call({claim, Pid}, _From, #state{vms = VMs,
+                                        handlers = Handlers} = State) ->
     Ref = erlang:monitor(process, Pid),
     VM = random_vm(VMs),
-    {reply, {ok, VM, Ref}, State};
+    {reply, {ok, VM, Ref, Handlers}, State};
 
 handle_call({release, VM, Context}, {Pid, _Ref}, State) ->
     Pattern = {Pid, '_', Context, '_'},
@@ -98,3 +93,29 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%% Internal
+
+parse_opts(Opts) ->
+    VMs = maps:get(vms, Opts, 50),
+
+    ExtraModules = maps:get(extra_modules, Opts, []),
+    Modules = maps:get(modules, Opts,
+                       application:get_env(erlang_v8_lib, modules, [])),
+    Core = application:get_env(erlang_v8_lib, core, []),
+
+    Files = [begin
+                 Path = code:priv_dir(Appname),
+                 filename:join(Path, Filename)
+             end || {Appname, Filename} <- Core ++ Modules ++ ExtraModules],
+
+    DefaultHandlers = application:get_env(erlang_v8_lib, handlers, []),
+    ExtraHandlers = maps:get(extra_handlers, Opts, []),
+    HandlerList = erlang_v8_lib_utils:extend(1, DefaultHandlers, ExtraHandlers),
+    Handlers = maps:from_list(HandlerList),
+
+    {ok, VMs, Files, Handlers}.
+
+random_vm(VMs) ->
+    lists:nth(random:uniform(length(VMs)), VMs).
+

@@ -20,4 +20,14 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-	{ok, {{one_for_one, 3, 10}, []}}.
+    SupFlags = #{
+        strategy => one_for_one,
+        intensity => 3,
+        period => 10
+    },
+    ChildSpecs = [#{
+        id => erlang_v8_lib_vm_sup,
+        start => {erlang_v8_lib_vm_sup, start_link, []},
+        type => supervisor
+    }],
+    {ok, {SupFlags, ChildSpecs}}.
