@@ -37,7 +37,6 @@ end_per_testcase(_Case, Config) ->
     exit(Pid, normal),
     ok.
 
-
 %% Tests
 
 get(_Config) ->
@@ -48,7 +47,7 @@ get(_Config) ->
         process.return(data);
     }).catch(function(err) {
         process.return(err);
-    });;
+    });
     ">>),
     #{ <<"body">> := Body0 } = Data0,
     #{ <<"args">> := #{ <<"test">> := <<"fest">> } } =
