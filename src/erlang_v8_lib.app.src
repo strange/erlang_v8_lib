@@ -1,17 +1,23 @@
 {application, erlang_v8_lib, [
-	{description, "Cool app"},
-	{vsn, "0.1.0"},
-	{id, "git"},
-	{modules, []},
-	{registered, []},
-	{applications, [
-		kernel,
-		stdlib,
-        erlang_v8,
-        poolboy,
-        hackney
-	]},
-	{mod, {erlang_v8_lib_app, []}},
+    {description, ""},
+    {vsn, "rolling"},
+    {id, "git"},
+    {modules, [
+        erlang_v8_http,
+        erlang_v8_lib,
+        erlang_v8_lib_app,
+        erlang_v8_lib_pool,
+        erlang_v8_lib_run,
+        erlang_v8_lib_sup,
+        erlang_v8_lib_test,
+        erlang_v8_lib_utils,
+        erlang_v8_lib_vm_sup,
+        erlang_v8_lib_worker,
+        erlang_v8_stdout_console
+    ]},
+    {registered, [erlang_v8_lib_sup]},
+    {applications, [kernel,stdlib,erlang_v8,hackney,lager]},
+    {mod, {erlang_v8_lib_app, []}},
 	{env, [
         {core, [
             {erlang_v8_lib, "promise.js"},
@@ -25,7 +31,7 @@
         ]},
         {handlers, [
             {<<"console">>, erlang_v8_stdout_console},
-            {<<"http">>, erlang_v8_http3}
+            {<<"http">>, erlang_v8_http}
         ]}
     ]}
 ]}.

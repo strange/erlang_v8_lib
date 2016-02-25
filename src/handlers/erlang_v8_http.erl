@@ -1,48 +1,58 @@
 -module(erlang_v8_http).
 
--export([http/2]).
+-export([run/2]).
 
-http([URL, MethodName, Type, Body], _HandlerContext) ->
-    HTTPOptions = [{timeout, 2000}],
-    Options = [{body_format, binary}],
-    Method = clean_method(MethodName),
-    Req = req_for_method(Method, binary_to_list(URL), binary_to_list(Type),
-                         Body),
-    case httpc:request(Method, Req, HTTPOptions, Options) of
-        {ok, {{_Protocol, 200, _Reason}, Headers, ResponseBody}} ->
-            {ok, fix_body(Headers, ResponseBody)};
-        {ok, {{_Protocol, _Other, Reason}, _Headers, _ResponseBody}} ->
-            {error, list_to_binary(Reason)};
-        {error, {failed_connect, _Info}} ->
-            {error, <<"Failed to connect.">>};
-        {error, {malformed_url, _URL}} ->
-            {error, <<"Malformed URL.">>};
-        {error, socket_closed_remotely} ->
-            {error, <<"Socket closed remotely.">>};
+run([URL, Method, Headers, Payload], _HandlerContext) ->
+    application:ensure_all_started(hackney),
+    Opts = [
+        {connect_timeout, 6000},
+        {recv_timeout, 6000}
+    ],
+    NewHeaders = [{<<"Connection">>, <<"close">>}|clean_headers(Headers)],
+    Now = erlang:timestamp(),
+    case hackney:request(clean_method(Method), URL, NewHeaders, Payload,
+                         Opts) of
+        {ok, Code, _RespHeaders, ClientRef} ->
+            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
+            case hackney:body(ClientRef) of
+                {ok, Body} ->
+                    {ok, #{ code => Code, body => Body, time => Time }};
+                {error, _Error} ->
+                    {error, <<"Error reading body.">>}
+            end;
+        {ok, Code, _RespHeaders} ->
+            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
+            {ok, #{ code => Code, time => Time }};
+        {error, nxdomain} ->
+            {error, <<"Invalid domain.">>};
+        {error, closed} ->
+            {error, <<"HTTP Socket closed.">>};
         {error, timeout} ->
-            {error, <<"Request timed out.">>};
-        {error, _Reason} ->
-            {error, <<"Unknown error.">>}
+            {error, <<"HTTP request timed out">>};
+        {error, connect_timeout} ->
+            {error, <<"HTTP connection timed out">>};
+        {error, ehostunreach} ->
+            {error, <<"HTTP host not reachable">>};
+        {error, econnrefused} ->
+            {error, <<"HTTP connection refused.">>};
+        %% {error, enetunreach} ->
+        %%     {error, <<"HTTP net not reachable">>};
+        Other ->
+            io:format("Unspecified HTTP error: ~p~n", [Other]),
+            {error, <<"Unspecified HTTP error.">>}
     end.
 
-fix_body(Headers, Body) ->
-    erlang:display(Headers),
-    try zlib:gunzip(Body) of
-        Body2 -> Body2
-    catch Error:Reason ->
-            io:format("ZLIB ERROR!: ~p ~p ~n", [Error, Reason]),
-            Body
-    end.
-    %% case lists:keysearch("content-encoding", 1, Headers) of
-    %%     {value, {_Key, Value}} when Value =:= "gzip" -> zlib:gunzip(Body);
-    %%     _ -> Body
-    %% end.
-
+clean_method(<<"POST">>) -> post;
 clean_method(<<"post">>) -> post;
+clean_method(<<"PUT">>) -> put;
+clean_method(<<"put">>) -> put;
+clean_method(<<"GET">>) -> get;
 clean_method(<<"get">>) -> get;
+clean_method(<<"DELETE">>) -> delete;
+clean_method(<<"delete">>) -> delete;
+clean_method(<<"HEAD">>) -> head;
+clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
 
-req_for_method(post, URL, Type, Body) ->
-        {URL, [], Type, Body};
-req_for_method(_Method, URL, _Type, _Body) ->
-    {URL, []}.
+clean_headers(<<"{}">>) -> [];
+clean_headers(Headers) -> jsx:decode(Headers).
