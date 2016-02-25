@@ -1,8 +1,8 @@
 # `erlang_v8_lib`
 
 An opinionated JavaScript framework built on top of `erlang_v8`.
-`erlang_v8_lib` is an Erlang application that includes a small framework that
-makes it easier to add functionality to a scripting environment.
+`erlang_v8_lib` is an Erlang application that includes a small framework to
+simplify the task of adding functionality to the scripting environment.
 
 The app adds three major components to accomplish this:
 
@@ -10,16 +10,34 @@ The app adds three major components to accomplish this:
 - A simple module system that makes it easy to connect JavaScript and Erlang.
 - A few batteries included modules
 
+## Getting started
+
+Compile and start a shell:
+
+    $ make
+    $ make shell
+
+Ensure that all required applications have been started, start the lib
+supervisor (note that this is a separate and mandatory step. the reasoning
+will be outlined below) and run some code:
+
+    1>  application:ensure_all_started(erlang_v8_lib).
+    {ok, [...]}
+    2> erlang_v8_lib_sup:start_link().
+    {ok,<0.69.0>}
+    3> erlang_v8_lib:run(<<"process.return(1 + 1)">>).
+    {ok,2}
+
 ## Registering handlers
 
-A handler is an erlang module that exposes a `run/1` function that is
+A handler is an erlang module that exposes a `run/2` function that is
 registered with an identifier: 
 
     -module(my_handler).
 
-    -export([run/1]).
+    -export([run/2]).
 
-    run(_Args) ->
+    run(_Args, _HandlerContext) ->
         {ok, <<"hello">>}.
 
 Registering the module as `{<<"myhandler">>, my_handler}` (more docs inc) will
@@ -52,7 +70,7 @@ proceeds in the VM, but no external events occur after the call to return.
 
 Simple HTTP api.
 
-#### `http.get(url)`
+#### `http.get(url, [options])`
 
     {ok, _Body} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get').then(function(data) {
@@ -60,10 +78,12 @@ Simple HTTP api.
     });
     ">>).
 
-#### `http.post(url, data)`
+#### `http.post(url, [options])`
 
     {ok, _Body} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', 'hello').then(function(data) {
+    http.post('http://httpbin.org/post', {
+        payload: 'hello'
+    }).then(function(data) {
         process.return(data.body);
     });
     ">>).
