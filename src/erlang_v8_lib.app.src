@@ -26,7 +26,6 @@
         {modules, [
             {erlang_v8_lib, "http.js"},
             {erlang_v8_lib, "console.js"},
-            {erlang_v8_lib, "event.js"},
             {erlang_v8_lib, "context.js"}
         ]},
         {handlers, [
