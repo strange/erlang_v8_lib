@@ -35,8 +35,8 @@ end_per_suite(_Config) ->
 get(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get', {
-                   payload: {test: 'fest'},
-               }).then(function(data) {
+        payload: { test: 'fest' }
+    }).then(function(data) {
         process.return(data);
     }).catch(function(err) {
         process.return(err);
@@ -71,9 +71,9 @@ get(_Config) ->
 
     {ok, Data4} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get', {
-                 headers: {'Content-Type': 'application/json'},
-                 payload: {test: 'fest'}
-             }).then(function(data) {
+        headers: { 'Content-Type': 'application/json' },
+        payload: {test: 'fest'}
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -83,8 +83,8 @@ get(_Config) ->
 
     {ok, Data5} = erlang_v8_lib:run(<<"
     http.get('http://httpbin.org/get?test=fest', {
-                 headers: {'Connection': 'close'}
-             }).then(function(data) {
+        headers: { 'Connection': 'close' }
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -96,8 +96,8 @@ get(_Config) ->
 post(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
     http.post('http://httpbin.org/post', {
-                  payload : 'hello'
-              }).then(function(data) {
+        payload : 'hello'
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -106,9 +106,9 @@ post(_Config) ->
 
     {ok, Data1} = erlang_v8_lib:run(<<"
     http.post('http://httpbin.org/post', {
-                   headers: {'Content-Type': 'application/json'},
-                   payload: 'hello',
-               }).then(function(data) {
+        headers: { 'Content-Type': 'application/json' },
+        payload: 'hello',
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -117,12 +117,12 @@ post(_Config) ->
 
     {ok, Data2} = erlang_v8_lib:run(<<"
     http.post('http://httpbin.org/post', {
-                   headers: {
-                       'Content-Type': 'application/json',
-                       'Connection': 'close'
-                   },
-                   payload: 'hello',
-               }).then(function(data) {
+        headers: {
+           'Content-Type': 'application/json',
+           'Connection': 'close'
+        },
+        payload: 'hello',
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -134,9 +134,9 @@ post(_Config) ->
 put(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
     http.put('http://httpbin.org/put', {
-                 headers: {'Content-Type': 'application/json'},
-                 payload: 'hello'
-             }).then(function(data) {
+        headers: { 'Content-Type': 'application/json' },
+        payload: 'hello'
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
@@ -149,9 +149,9 @@ put(_Config) ->
 delete(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
     http.delete('http://httpbin.org/delete', {
-                    headers: {'Content-Type': 'application/json'},
-                    payload: 'hello'
-                }).then(function(data) {
+        headers: { 'Content-Type': 'application/json' },
+        payload: 'hello'
+    }).then(function(data) {
         process.return(data);
     });
     ">>),
