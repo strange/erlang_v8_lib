@@ -2,18 +2,16 @@
 
 -export([run/2]).
 
-run([URL, Method, Payload], _HandlerContext) ->
+run([URL, Method, Headers, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Opts = [
         {connect_timeout, 6000},
         {recv_timeout, 6000}
     ],
-    Headers = [
-        {<<"User-Agent">>, <<"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36">>},
-        {<<"Connection">>, <<"close">>}
-    ],
+    NewHeaders = [{<<"Connection">>, <<"close">>}|clean_headers(Headers)],
     Now = erlang:timestamp(),
-    case hackney:request(clean_method(Method), URL, Headers, Payload, Opts) of
+    case hackney:request(clean_method(Method), URL, NewHeaders, Payload,
+                         Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
@@ -22,6 +20,9 @@ run([URL, Method, Payload], _HandlerContext) ->
                 {error, _Error} ->
                     {error, <<"Error reading body.">>}
             end;
+        {ok, Code, _RespHeaders} ->
+            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
+            {ok, #{ code => Code, time => Time }};
         {error, nxdomain} ->
             {error, <<"Invalid domain.">>};
         {error, closed} ->
@@ -37,12 +38,21 @@ run([URL, Method, Payload], _HandlerContext) ->
         %% {error, enetunreach} ->
         %%     {error, <<"HTTP net not reachable">>};
         Other ->
-            lager:info("Unspecified HTTP error: ~p", [Other]),
+            io:format("Unspecified HTTP error: ~p~n", [Other]),
             {error, <<"Unspecified HTTP error.">>}
     end.
 
 clean_method(<<"POST">>) -> post;
 clean_method(<<"post">>) -> post;
+clean_method(<<"PUT">>) -> put;
+clean_method(<<"put">>) -> put;
 clean_method(<<"GET">>) -> get;
 clean_method(<<"get">>) -> get;
+clean_method(<<"DELETE">>) -> delete;
+clean_method(<<"delete">>) -> delete;
+clean_method(<<"HEAD">>) -> head;
+clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
+
+clean_headers(<<"{}">>) -> [];
+clean_headers(Headers) -> jsx:decode(Headers).
