@@ -22,7 +22,10 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [10000, 50], []).
 
 claim() ->
-    gen_server:call(?MODULE, {claim, self()}, 2000).
+    {ok, VM, Ref} = gen_server:call(?MODULE, {claim, self()}, 2000),
+    {ok, Context} = erlang_v8_vm:create_context(VM),
+    ets:insert(?MODULE, {self(), VM, Context, Ref}),
+    {ok, {VM, Context}}.
 
 release({VM, Context}) ->
     gen_server:call(?MODULE, {release, VM, Context}, 2000).
@@ -34,7 +37,12 @@ call({VM, Context}, Fun, Args) ->
     erlang_v8:call(VM, Context, Fun, Args).
 
 init([MaxContexts, NVMs]) ->
-    ets:new(?MODULE, [duplicate_bag, named_table]),
+    ets:new(?MODULE, [
+        duplicate_bag,
+        named_table,
+        public,
+        {write_concurrency, true}
+    ]),
 
     {ok, Core} = application:get_env(erlang_v8_lib, core),
     DefaultModules = application:get_env(erlang_v8_lib, default_modules, []),
@@ -59,9 +67,7 @@ random_vm(VMs) ->
 handle_call({claim, Pid}, _From, #state{vms = VMs} = State) ->
     Ref = erlang:monitor(process, Pid),
     VM = random_vm(VMs),
-    {ok, Context} = erlang_v8_vm:create_context(VM),
-    ets:insert(?MODULE, {Pid, VM, Context, Ref}),
-    {reply, {ok, {VM, Context}}, State};
+    {reply, {ok, VM, Ref}, State};
 
 handle_call({release, VM, Context}, {Pid, _Ref}, State) ->
     Pattern = {Pid, '_', Context, '_'},
