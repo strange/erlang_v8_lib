@@ -64,13 +64,17 @@ handle_call({claim, Pid}, _From, #state{vms = VMs,
     VM = random_vm(VMs),
     {reply, {ok, VM, Ref, Handlers}, State};
 
-handle_call({release, VM, Context}, {Pid, _Ref}, State) ->
-    Pattern = {Pid, '_', Context, '_'},
-    [{_Pid, VM, Context, Ref}] = ets:match_object(?MODULE, Pattern),
-    ok = erlang_v8_vm:destroy_context(VM, Context),
-    true = erlang:demonitor(Ref),
-    true = ets:match_delete(?MODULE, Pattern),
-    {reply, ok, State};
+handle_call({release, VM, Context}, _From, State) ->
+    Pattern = {'_', VM, Context, '_'},
+    case ets:match_object(?MODULE, Pattern) of
+        [{_Pid, _VM, _Context, Ref}] ->
+            ok = erlang_v8_vm:destroy_context(VM, Context),
+            true = erlang:demonitor(Ref),
+            true = ets:match_delete(?MODULE, Pattern),
+            {reply, ok, State};
+        [] ->
+            {reply, {error, invalid_worker}, State}
+    end;
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -80,10 +84,14 @@ handle_cast(_Msg, State) ->
 
 handle_info({'DOWN', Ref, process, Pid, _Reason}, State) ->
     Pattern = {Pid, '_', '_', Ref},
-    [{Pid, VM, Context, Ref}] = ets:match_object(?MODULE, Pattern),
-    ok = erlang_v8_vm:destroy_context(VM, Context),
-    true = ets:match_delete(?MODULE, Pattern),
-    {noreply, State};
+    case ets:match_object(?MODULE, Pattern) of
+        [{Pid, VM, Context, Ref}] ->
+            ok = erlang_v8_vm:destroy_context(VM, Context),
+            true = ets:match_delete(?MODULE, Pattern),
+            {noreply, State};
+        [] ->
+            {noreply, State}
+    end;
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -108,8 +116,6 @@ parse_opts(Opts) ->
                  Path = priv_dir(Appname),
                  filename:join(Path, Filename)
              end || {Appname, Filename} <- Core ++ Modules ++ ExtraModules],
-
-    %% io:format(standard_error, "Files to load: ~p~n", [Files]),
 
     DefaultHandlers = application:get_env(erlang_v8_lib, handlers, []),
     ExtraHandlers = maps:get(extra_handlers, Opts, []),

@@ -10,16 +10,20 @@
 -export([console_log/1]).
 -export([instructions/1]).
 -export([return/1]).
+-export([manual_release/1]).
+-export([automatic_release/1]).
 -export([context/1]).
 
 %% Callbacks
 
 all() ->
     [
-        console_log,
-        instructions,
-        context,
-        return
+        %% console_log,
+        %% instructions,
+        manual_release,
+        automatic_release
+        %% context,
+        %% return
     ].
 
 init_per_suite(Config) ->
@@ -61,3 +65,37 @@ return(_Config) ->
     erlang_v8_lib_sup:start_link(),
     {ok, 1} = erlang_v8_lib:run(<<"process.return(1);">>),
     ok.
+
+automatic_release(_Config) ->
+    Parent = self(),
+
+    Pid = spawn(fun() ->
+        {ok, Worker} = erlang_v8_lib_pool:claim(),
+        Parent ! Worker,
+        receive never -> ok end
+    end),
+
+    Worker = receive Response -> Response end,
+
+    exit(Pid, kill),
+    timer:sleep(1),
+
+    {error, invalid_worker} = erlang_v8_lib_pool:release(Worker),
+
+    ok.
+
+manual_release(_Config) ->
+    Parent = self(),
+
+    _Pid = spawn(fun() ->
+        {ok, Worker} = erlang_v8_lib_pool:claim(),
+        Parent ! Worker,
+        receive never -> ok end
+    end),
+
+    Worker = receive Response -> Response end,
+    timer:sleep(1),
+    ok = erlang_v8_lib_pool:release(Worker),
+
+    ok.
+
