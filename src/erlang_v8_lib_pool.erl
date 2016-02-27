@@ -105,9 +105,11 @@ parse_opts(Opts) ->
     Core = application:get_env(erlang_v8_lib, core, []),
 
     Files = [begin
-                 Path = code:priv_dir(Appname),
+                 Path = priv_dir(Appname),
                  filename:join(Path, Filename)
              end || {Appname, Filename} <- Core ++ Modules ++ ExtraModules],
+
+    %% io:format(standard_error, "Files to load: ~p~n", [Files]),
 
     DefaultHandlers = application:get_env(erlang_v8_lib, handlers, []),
     ExtraHandlers = maps:get(extra_handlers, Opts, []),
@@ -119,3 +121,16 @@ parse_opts(Opts) ->
 random_vm(VMs) ->
     lists:nth(random:uniform(length(VMs)), VMs).
 
+priv_dir(Appname) ->
+    case code:priv_dir(Appname) of
+        {error, bad_name} ->
+            %% The app has probably not been loaded properly yet. Attempt to
+            %% achieve the same effect by loading the priv dir relative to a
+            %% module with the same name as the app. This is a terrible idea
+            %% for several reasons, but the system will be replaced soon
+            %% anyway.
+            Ebin = filename:dirname(code:which(Appname)),
+            filename:join(filename:dirname(Ebin), "priv");
+        Name ->
+            Name
+    end.
