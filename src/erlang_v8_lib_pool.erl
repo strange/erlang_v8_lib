@@ -19,6 +19,7 @@
 -record(state, {
     max_contexts,
     handlers,
+    nvms,
     vms
 }).
 
@@ -56,12 +57,12 @@ init([Opts]) ->
         VM
     end, lists:seq(1, NVMs)),
 
-    {ok, #state{vms = VMs, handlers = Handlers}}.
+    {ok, #state{vms = VMs, handlers = Handlers, nvms = length(VMs)}}.
 
-handle_call({claim, Pid}, _From, #state{vms = VMs,
+handle_call({claim, Pid}, _From, #state{vms = VMs, nvms = NVMs,
                                         handlers = Handlers} = State) ->
     Ref = erlang:monitor(process, Pid),
-    VM = random_vm(VMs),
+    VM = random_vm(VMs, NVMs, Pid),
     {reply, {ok, VM, Ref, Handlers}, State};
 
 handle_call({release, VM, Context}, _From, State) ->
@@ -124,8 +125,10 @@ parse_opts(Opts) ->
 
     {ok, VMs, Files, Handlers}.
 
-random_vm(VMs) ->
-    lists:nth(random:uniform(length(VMs)), VMs).
+random_vm(VMs, NVMs, Pid) ->
+    Rand = erlang:phash2(Pid, NVMs) + 1,
+    %% Rand = random:uniform(NVMs),
+    lists:nth(Rand, VMs).
 
 priv_dir(Appname) ->
     case code:priv_dir(Appname) of
