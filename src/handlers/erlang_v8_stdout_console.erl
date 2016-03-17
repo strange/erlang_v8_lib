@@ -3,5 +3,5 @@
 -export([run/2]).
 
 run([Level, Message], _HandlerContext) ->
-    io:format("[Log(~p)]: ~p~n", [Level, Message]),
+    io:format(standard_error, "[Log(~p)]: ~p~n", [Level, Message]),
     ok.

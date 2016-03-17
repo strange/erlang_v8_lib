@@ -23,6 +23,46 @@ var http = {};
         return qs;
     }
 
+    http.__resolve_promise = function(status, ref, resp) {
+        var body = resp.body;
+        delete resp.body;
+
+        resp.text = function() {
+            var p = new Promise(function(resolve, reject) {
+                resolve(body);
+            });
+            return p;
+        };
+
+        resp.json = function() {
+            var p = new Promise(function(resolve, reject) {
+                try {
+                    var json = JSON.parse(body);
+                    resolve(json);
+                } catch(e) {
+                    reject(e);
+                }
+            });
+            return p;
+        };
+
+        resp.blob = function() {
+            var p = new Promise(function(resolve, reject) {
+                reject('blobs are not supported yet.');
+            });
+            return p;
+        };
+
+        resp.arrayBuffer = function() {
+            var p = new Promise(function(resolve, reject) {
+                reject('ArayBuffers are not supported yet.');
+            });
+            return p;
+        };
+
+        return __internal.handleExternal(status, ref, resp);
+    };
+
     http.request = function(method, url, data) {
         data = data || {};
         data.payload = data.payload || {};

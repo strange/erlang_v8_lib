@@ -2,6 +2,8 @@
 
 -export([run/2]).
 
+-define(RESOLVE_FUN, <<"http.__resolve_promise">>).
+
 run([URL, Method, Headers, Payload], _HandlerContext) ->
     application:ensure_all_started(hackney),
     Opts = [
@@ -16,13 +18,14 @@ run([URL, Method, Headers, Payload], _HandlerContext) ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
                 {ok, Body} ->
-                    {ok, #{ code => Code, body => Body, time => Time }};
+                    {resolve_in_js, ?RESOLVE_FUN,
+                     #{ code => Code, body => Body, time => Time }};
                 {error, _Error} ->
                     {error, <<"Error reading body.">>}
             end;
         {ok, Code, _RespHeaders} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
-            {ok, #{ code => Code, time => Time }};
+            {resolve_in_js, ?RESOLVE_FUN, #{ code => Code, time => Time }};
         {error, nxdomain} ->
             {error, <<"Invalid domain.">>};
         {error, closed} ->
@@ -35,8 +38,6 @@ run([URL, Method, Headers, Payload], _HandlerContext) ->
             {error, <<"HTTP host not reachable">>};
         {error, econnrefused} ->
             {error, <<"HTTP connection refused.">>};
-        %% {error, enetunreach} ->
-        %%     {error, <<"HTTP net not reachable">>};
         Other ->
             io:format("Unspecified HTTP error: ~p~n", [Other]),
             {error, <<"Unspecified HTTP error.">>}

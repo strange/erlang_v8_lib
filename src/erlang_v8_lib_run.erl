@@ -73,6 +73,10 @@ unwind({_VM, _Context, Handlers} = Worker, [Action|T], HandlerContext) ->
                                            <<"__internal.handleExternal">>,
                                            [Status, Ref, Args]),
             Actions;
+        [resolve_in_js, Status, Ref, Fun, Args] ->
+            {ok, Actions} = erlang_v8_lib_pool:call(Worker, Fun,
+                                                    [Status, Ref, Args]),
+            Actions;
         Other ->
             io:format("Other: ~p~n", [Other]),
             []
@@ -85,6 +89,8 @@ dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
             [[callback, <<"error">>, Ref, <<"Invalid external handler.">>]];
         HandlerMod ->
             case HandlerMod:run(Args, HandlerContext) of
+                {resolve_in_js, Fun, Response} ->
+                    [[resolve_in_js, <<"success">>, Ref, Fun, Response]];
                 {ok, Response} ->
                     [[callback, <<"success">>, Ref, Response]];
                 ok ->

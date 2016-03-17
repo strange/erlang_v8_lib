@@ -17,7 +17,6 @@ var __internal = {
                 promise.reject(args);
             }
         }
-
         return __internal.actions;
     }
 };
