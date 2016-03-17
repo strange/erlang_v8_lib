@@ -20,7 +20,6 @@
     {mod, {erlang_v8_lib_app, []}},
 	{env, [
         {core, [
-            {erlang_v8_lib, "promise.js"},
             {erlang_v8_lib, "base.js"}
         ]},
         {modules, [
