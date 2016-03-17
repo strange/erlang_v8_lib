@@ -63,23 +63,24 @@ unwind(Worker, [{eval, Source}], HandlerContext) ->
 unwind(_Worker, [[<<"return">>, Value]|_], _HandlerContext) ->
     {ok, jsx:decode(jsx:encode(Value), [return_maps])};
 
-unwind({_VM, _Context, Handlers} = Worker, [Action|T], HandlerContext) ->
-    NewActions = case Action of
-        [<<"external">>, HandlerIdentifier, Ref, Args] ->
-            dispatch_external(HandlerIdentifier, Ref, Args, Handlers,
-                              HandlerContext);
-        [callback, Status, Ref, Args] ->
-            {ok, Actions} = erlang_v8_lib_pool:call(Worker, 
-                                           <<"__internal.handleExternal">>,
-                                           [Status, Ref, Args]),
-            Actions;
-        Other ->
-            io:format("Other: ~p~n", [Other]),
-            []
-    end,
-    unwind(Worker, NewActions ++ T, HandlerContext).
+unwind(Worker, [[<<"external">>, HandlerIdentifier, Ref, Args]|T],
+       HandlerContext) ->
+    Actions = dispatch_external(Worker, Ref, Args, HandlerIdentifier,
+                                HandlerContext),
+    unwind(Worker, Actions ++ T, HandlerContext);
 
-dispatch_external(HandlerIdentifier, Ref, Args, Handlers, HandlerContext) ->
+unwind(Worker, [[callback, Status, Ref, Args]|T], HandlerContext) ->
+    {ok, Actions} = erlang_v8_lib_pool:call(Worker, 
+                                   <<"__internal.handleExternal">>,
+                                   [Status, Ref, Args]),
+    unwind(Worker, Actions ++ T, HandlerContext);
+
+unwind(Worker, [Action|T], HandlerContext) ->
+    lager:error("Unknown instruction: ~p", [Action]),
+    unwind(Worker, T, HandlerContext).
+
+dispatch_external({_, _, Handlers}, Ref, Args, HandlerIdentifier,
+                  HandlerContext) ->
     case maps:get(HandlerIdentifier, Handlers, undefined) of
         undefined ->
             [[callback, <<"error">>, Ref, <<"Invalid external handler.">>]];
