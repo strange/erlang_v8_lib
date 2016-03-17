@@ -70,9 +70,8 @@ unwind(Worker, [[<<"external">>, HandlerIdentifier, Ref, Args]|T],
     unwind(Worker, Actions ++ T, HandlerContext);
 
 unwind(Worker, [[callback, Status, Ref, Args]|T], HandlerContext) ->
-    {ok, Actions} = erlang_v8_lib_pool:call(Worker, 
-                                   <<"__internal.handleExternal">>,
-                                   [Status, Ref, Args]),
+    Fun = <<"__internal.handleExternal">>,
+    {ok, Actions} = erlang_v8_lib_pool:call(Worker, Fun, [Status, Ref, Args]),
     unwind(Worker, Actions ++ T, HandlerContext);
 
 unwind(Worker, [Action|T], HandlerContext) ->
