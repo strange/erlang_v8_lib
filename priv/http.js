@@ -1,8 +1,21 @@
 'use strict';
 
-var http = {};
+var http = (function() {
+    /**
+     * Request data parameters are contained in an object with the following
+     * layout.
+     * @typedef {Object} RequestData
+     * @property {object|string} payload {type: Object<*string>|String}
+     * @property {object} headers {type: Object<*string>}
+     * @property {object} options {type: Object<*string|number>}
+     */
+    var RequestData;
 
-(function() {
+    /**
+     * Supported HTTP request methods.
+     *
+     * @enum {string}
+     */
     var methods = {
         DELETE: 'DELETE',
         GET: 'GET',
@@ -11,6 +24,12 @@ var http = {};
         PUT: 'PUT'
     };
 
+    /**
+     * Takes an object and converts its key value pairs into a query string.
+     *
+     * @param {obect} params
+     * @return {string}
+     */
     function formatQueryParams(params) {
         var prefix = '?';
         var qs = '';
@@ -23,7 +42,14 @@ var http = {};
         return qs;
     }
 
-    http.request = function(method, url, data) {
+    /**
+     * Makes a request.
+     *
+     * @param {string} method The HTTP "verb" to use.
+     * @param {string} url The remote url to make the request to.
+     * @param {?RequestData=} data The data to append to the request.
+     */
+    function request(method, url, data) {
         data = data || {};
         data.payload = data.payload || {};
         data.headers = data.headers || {};
@@ -37,7 +63,13 @@ var http = {};
         ]);
     };
 
-    http.get = function(url, data) {
+    /**
+     * Convenience function for making a get request.
+     *
+     * @param {string} url The remote url to make the request to.
+     * @param {?RequestData=} data The data to append to the request.
+     */
+    function get(url, data) {
         if (data &&
             data.payload &&
             typeof data.payload !== 'string' &&
@@ -49,11 +81,15 @@ var http = {};
         return http.request(methods.GET, url, data);
     };
 
-    http.delete = http.request.bind(http, methods.DELETE);
-
-    http.head = http.request.bind(http, methods.HEAD);
-
-    http.post = http.request.bind(http, methods.POST);
-
-    http.put = http.request.bind(http, methods.PUT);
+    /**
+     * Expose methods on the http object.
+     */
+    return {
+        request: request,
+        get: get,
+        delete: request.bind(http, methods.DELETE),
+        head: request.bind(http, methods.HEAD),
+        post: request.bind(http, methods.POST),
+        put: request.bind(http, methods.PUT)
+    };
 })();
