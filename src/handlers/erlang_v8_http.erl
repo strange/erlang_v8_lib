@@ -36,6 +36,8 @@ run([URL, Method, Headers, Payload], _HandlerContext) ->
             {error, <<"HTTP connection timed out">>};
         {error, ehostunreach} ->
             {error, <<"HTTP host not reachable">>};
+        {error, enetunreach} ->
+            {error, <<"Network is not reachable">>};
         {error, econnrefused} ->
             {error, <<"HTTP connection refused.">>};
         Other ->
