@@ -18,17 +18,19 @@
     {registered, [erlang_v8_lib_sup]},
     {applications, [kernel,stdlib,erlang_v8,hackney,lager]},
     {mod, {erlang_v8_lib_app, []}},
-	{env, [
+    {env, [
         {core, [
             {erlang_v8_lib, "base.js"}
         ]},
         {modules, [
             {erlang_v8_lib, "http.js"},
             {erlang_v8_lib, "console.js"},
+            {erlang_v8_lib, "cert.js"},
             {erlang_v8_lib, "context.js"}
         ]},
         {handlers, [
             {<<"console">>, erlang_v8_stdout_console},
+            {<<"cert">>, erlang_v8_cert},
             {<<"http">>, erlang_v8_http}
         ]}
     ]}

@@ -68,7 +68,6 @@ return(_Config) ->
 
 automatic_release(_Config) ->
     Parent = self(),
-
     Pid = spawn(fun() ->
         {ok, Worker} = erlang_v8_lib_pool:claim(),
         Parent ! Worker,
@@ -98,4 +97,3 @@ manual_release(_Config) ->
     ok = erlang_v8_lib_pool:release(Worker),
 
     ok.
-
