@@ -70,20 +70,27 @@ proceeds in the VM, but no external events occur after the call to return.
 
 Simple HTTP api.
 
-#### `http.get(url, [options])`
+#### `http.request(method, url, [options])`
+
+Make a HTTP request to `url`.
+
+Example:
 
     {ok, _Body} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get').then(function(data) {
+    http.request('get', 'http://httpbin.org/get').then((data) => {
         process.return(data.body);
     });
     ">>).
+
+Valid `options` attributes:
+
+- `payload`: Data to be sent (String)
+- `headers`: Headers to send (Object)
+
+#### `http.get(url, [options])`
+
+Shorthand for `http.request('get', url, [options])`.
 
 #### `http.post(url, [options])`
 
-    {ok, _Body} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', {
-        payload: 'hello'
-    }).then(function(data) {
-        process.return(data.body);
-    });
-    ">>).
+Shorthand for `http.request('post', url, [options])`.
