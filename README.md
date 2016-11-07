@@ -77,8 +77,9 @@ Make a HTTP request to `url`.
 Example:
 
     {ok, _Body} = erlang_v8_lib:run(<<"
-    http.request('get', 'http://httpbin.org/get').then((data) => {
-        process.return(data.body);
+    http.request('get', 'http://httpbin.org/get')
+        .then((resp) => resp.body())
+        .then((body) => process.return(body));
     });
     ">>).
 
@@ -86,6 +87,12 @@ Valid `options` attributes:
 
 - `payload`: Data to be sent (String)
 - `headers`: Headers to send (Object)
+
+The function returns a promise. The resolve function takes one argument:
+`response`. The response object has the following attributes and methods:
+
+- `response.json()`: Convert payload to a JavaScript structure (Promise).
+- `response.text()`: Return payload as text (Promise).
 
 #### `http.get(url, [options])`
 
