@@ -27,10 +27,10 @@ all() ->
         get,
         arguments,
         headers,
-        post
-        %% put,
-        %% delete,
-        %% head,
+        post,
+        put,
+        delete,
+        head
         %% https
     ].
 
@@ -120,79 +120,36 @@ get(_Config) ->
 
 post(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.get('http://127.0.01:5000/post', { body: 'hello' }).then((resp) => {
-        return resp.text();
-    }).then(function(text) {
-        process.return(text);
+    http.post('http://127.0.01:5000/post', { body: 'hello' }).then((resp) => {
+        return resp.json();
+    }).then(function(json) {
+        process.return(json);
     });
     ">>),
-    #{ <<"body">> := <<"hello">> } = Data0,
-
-    %% {ok, Data0} = erlang_v8_lib:run(<<"
-    %% http.post('http://127.0.0.1:5000/post', {
-    %%     body : 'hello'
-    %% }).then(function(resp) {
-    %%     resp.json
-    %% });
-    %% ">>),
-    %% #{ <<"body">> := Body0 } = Data0,
-    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
-    %%
-    %% {ok, Data1} = erlang_v8_lib:run(<<"
-    %% http.post('http://127.0.0.1:5000/post', {
-    %%     headers: { 'Content-Type': 'application/json' },
-    %%     body: 'hello',
-    %% }).then(function(data) {
-    %%     process.return(data);
-    %% });
-    %% ">>),
-    %% #{ <<"body">> := Body1 } = Data1,
-    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body1, [return_maps]),
-    %%
-    %% {ok, Data2} = erlang_v8_lib:run(<<"
-    %% http.post('http://127.0.01:5000/post', {
-    %%     headers: {
-    %%        'Content-Type': 'application/json',
-    %%        'Connection': 'close'
-    %%     },
-    %%     body: 'hello',
-    %% }).then(function(data) {
-    %%     process.return(data);
-    %% });
-    %% ">>),
-    %% #{ <<"body">> := Body2 } = Data2,
-    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body2, [return_maps]),
+    #{ <<"data">> := <<"hello">> } = Data0,
 
     ok.
 
 put(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.put('http://127.0.01:5000/put', {
-        headers: { 'Content-Type': 'application/json' },
-        body: 'hello'
-    }).then(function(data) {
-        process.return(data);
+    http.put('http://127.0.01:5000/put', { body: 'hello' }).then((resp) => {
+        return resp.json();
+    }).then(function(json) {
+        process.return(json);
     });
     ">>),
-    #{ <<"code">> := 200 } = Data0,
-    #{ <<"body">> := Body0 } = Data0,
-    #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
-
+    #{ <<"data">> := <<"hello">> } = Data0,
     ok.
 
 delete(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.delete('http://127.0.01:5000/delete', {
-        headers: { 'Content-Type': 'application/json' },
-        body: 'hello'
-    }).then(function(data) {
-        process.return(data);
+    http.delete('http://127.0.01:5000/delete', { body: 'hello' }).then((resp) => {
+        return resp.json();
+    }).then(function(json) {
+        process.return(json);
     });
     ">>),
-    #{ <<"code">> := 200 } = Data0,
-    #{ <<"body">> := Body0 } = Data0,
-    #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
-
+    #{ <<"data">> := <<"hello">> } = Data0,
     ok.
 
 head(_Config) ->

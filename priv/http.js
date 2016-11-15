@@ -48,14 +48,13 @@ var http = (function() {
      *
      * @param {string} method The HTTP "verb" to use.
      * @param {string} url The remote url to make the request to.
-     * @param {?RequestData=} options The data to append to the request.
+     * @param {Object} config Configuration
      */
-    function request(url, config) {
+    function request(method, url, config) {
         config = config || {};
 
         var body = config.body || '';
         var headers = config.headers || {};
-        var method = config.method || 'GET';
 
         return external.run('http', [
             String(url),
@@ -63,18 +62,6 @@ var http = (function() {
             Object(headers),
             String(body)
         ]);
-    };
-
-    /**
-     * Convenience function for making a get request.
-     *
-     * @param {string} url The remote url to make the request to.
-     * @param {?RequestData=} data The data to append to the request.
-     */
-    function get(url, config) {
-        config = config || {};
-        config.method = methods.GET;
-        return http.request(url, config);
     };
 
     function __resolve_promise(status, ref, resp) {
@@ -123,7 +110,7 @@ var http = (function() {
      */
     return {
         request: request,
-        get: get,
+        get: request.bind(http, methods.GET),
         delete: request.bind(http, methods.DELETE),
         head: request.bind(http, methods.HEAD),
         post: request.bind(http, methods.POST),
