@@ -24,8 +24,8 @@
 all() ->
     [
         simple,
-        get,
         arguments,
+        get,
         headers,
         post,
         put,
@@ -52,6 +52,13 @@ end_per_testcase(_Case, Config) ->
 simple(_Config) ->
     {ok, #{ <<"args">> := #{ <<"x">> := <<"1">> } }} = erlang_v8_lib:run(<<"
     http.get('http://127.0.01:5000/get?x=1')
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
+    {ok, <<"invalid_url">>} = erlang_v8_lib:run(<<"
+    http.get('abcdefedcba')
         .then((resp) => resp.json())
         .then((json) => process.return(json))
         .catch((error) => process.return(error));
@@ -187,7 +194,7 @@ headers(_Config) ->
     ok.
 
 arguments(_Config) ->
-    {ok, <<"Invalid arguments">>} = erlang_v8_lib:run(<<"
+    {ok, <<"invalid_url">>} = erlang_v8_lib:run(<<"
     http.get(1).catch((error) => process.return(error));
     ">>),
     ok.

@@ -21,6 +21,8 @@ validate_args(Config, HandlerContext) ->
          ]}) of
         {ok, ValidConfig} ->
             validate_headers(ValidConfig, HandlerContext);
+        {error, #{ url := Reason }} ->
+            {error, Reason};
         {error, _Errors} ->
             {error, <<"Invalid arguments">>}
     end.
