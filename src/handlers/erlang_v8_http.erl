@@ -76,15 +76,10 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
     end.
 
 clean_method(<<"POST">>) -> post;
-clean_method(<<"post">>) -> post;
 clean_method(<<"PUT">>) -> put;
-clean_method(<<"put">>) -> put;
 clean_method(<<"GET">>) -> get;
-clean_method(<<"get">>) -> get;
 clean_method(<<"DELETE">>) -> delete;
-clean_method(<<"delete">>) -> delete;
 clean_method(<<"HEAD">>) -> head;
-clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
 
 clean_headers(Headers) when is_map(Headers) ->
