@@ -44,12 +44,13 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
     ],
     Now = erlang:timestamp(),
     case hackney:request(Method, URL, Headers, Payload, Opts) of
-        {ok, Code, _RespHeaders, ClientRef} ->
+        {ok, Code, RespHeaders, ClientRef} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
                 {ok, Body} ->
                     {resolve_in_js, ?RESOLVE_FUN,
-                     #{ code => Code, body => Body, time => Time }};
+                     #{ code => Code, body => Body, time => Time,
+                        headers => jsx:encode(RespHeaders) }};
                 {error, _Error} ->
                     {error, <<"Error reading body.">>}
             end;

@@ -191,6 +191,12 @@ headers(_Config) ->
         .catch((error) => process.return(error));
     ">>),
 
+    {ok, #{ <<"Content-Type">> := <<"application/json">> }} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/get')
+        .then((resp) => process.return(resp.headers))
+        .catch((error) => process.return(error));
+    ">>),
+
     ok.
 
 arguments(_Config) ->

@@ -71,6 +71,12 @@ var http = (function() {
         var body = resp.body;
         delete resp.body;
 
+        try {
+            resp.headers = JSON.parse(resp.headers);
+        } catch(e) {
+            resp.headers = {};
+        }
+
         resp.text = function() {
             var p = new Promise(function(resolve, reject) {
                 resolve(body);
