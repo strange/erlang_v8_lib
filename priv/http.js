@@ -55,6 +55,9 @@ var http = (function() {
 
         var body = config.body || '';
         var headers = config.headers || {};
+        var queryParams = config.queryParams || {};
+
+        url += formatQueryParams(queryParams);
 
         return external.run('http', [
             String(url),
