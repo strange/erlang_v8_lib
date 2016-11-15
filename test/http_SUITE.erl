@@ -26,8 +26,8 @@ all() ->
         simple,
         get,
         arguments,
-        headers
-        %% post,
+        headers,
+        post
         %% put,
         %% delete,
         %% head,
@@ -56,30 +56,6 @@ simple(_Config) ->
         .then((json) => process.return(json))
         .catch((error) => process.return(error));
     ">>),
-    ok.
-
-headers(_Config) ->
-    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"ok">> }}} = erlang_v8_lib:run(<<"
-    http.get('http://127.0.01:5000/headers', { headers: { 'header': 'ok' } })
-        .then((resp) => resp.json())
-        .then((json) => process.return(json))
-        .catch((error) => process.return(error));
-    ">>),
-
-    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"1">> }}} = erlang_v8_lib:run(<<"
-    http.get('http://127.0.01:5000/headers', { headers: { 'header': 1 } })
-        .then((resp) => resp.json())
-        .then((json) => process.return(json))
-        .catch((error) => process.return(error));
-    ">>),
-
-    {ok, #{ <<"headers">> := #{ <<"1">> := <<"header">> }}} = erlang_v8_lib:run(<<"
-    http.get('http://127.0.01:5000/headers', { headers: { 1: 'header' } })
-        .then((resp) => resp.json())
-        .then((json) => process.return(json))
-        .catch((error) => process.return(error));
-    ">>),
-
     ok.
 
 get(_Config) ->
@@ -144,39 +120,48 @@ get(_Config) ->
 
 post(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.post('http://127.0.0.1:5000/post', {
-        body : 'hello'
-    }).then(function(data) {
-        process.return(data);
+    http.get('http://127.0.01:5000/post', { body: 'hello' }).then((resp) => {
+        return resp.text();
+    }).then(function(text) {
+        process.return(text);
     });
     ">>),
-    #{ <<"body">> := Body0 } = Data0,
-    #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
+    #{ <<"body">> := <<"hello">> } = Data0,
 
-    {ok, Data1} = erlang_v8_lib:run(<<"
-    http.post('http://127.0.0.1:5000/post', {
-        headers: { 'Content-Type': 'application/json' },
-        body: 'hello',
-    }).then(function(data) {
-        process.return(data);
-    });
-    ">>),
-    #{ <<"body">> := Body1 } = Data1,
-    #{ <<"data">> := <<"hello">> } = jsx:decode(Body1, [return_maps]),
-
-    {ok, Data2} = erlang_v8_lib:run(<<"
-    http.post('http://127.0.01:5000/post', {
-        headers: {
-           'Content-Type': 'application/json',
-           'Connection': 'close'
-        },
-        body: 'hello',
-    }).then(function(data) {
-        process.return(data);
-    });
-    ">>),
-    #{ <<"body">> := Body2 } = Data2,
-    #{ <<"data">> := <<"hello">> } = jsx:decode(Body2, [return_maps]),
+    %% {ok, Data0} = erlang_v8_lib:run(<<"
+    %% http.post('http://127.0.0.1:5000/post', {
+    %%     body : 'hello'
+    %% }).then(function(resp) {
+    %%     resp.json
+    %% });
+    %% ">>),
+    %% #{ <<"body">> := Body0 } = Data0,
+    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
+    %%
+    %% {ok, Data1} = erlang_v8_lib:run(<<"
+    %% http.post('http://127.0.0.1:5000/post', {
+    %%     headers: { 'Content-Type': 'application/json' },
+    %%     body: 'hello',
+    %% }).then(function(data) {
+    %%     process.return(data);
+    %% });
+    %% ">>),
+    %% #{ <<"body">> := Body1 } = Data1,
+    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body1, [return_maps]),
+    %%
+    %% {ok, Data2} = erlang_v8_lib:run(<<"
+    %% http.post('http://127.0.01:5000/post', {
+    %%     headers: {
+    %%        'Content-Type': 'application/json',
+    %%        'Connection': 'close'
+    %%     },
+    %%     body: 'hello',
+    %% }).then(function(data) {
+    %%     process.return(data);
+    %% });
+    %% ">>),
+    %% #{ <<"body">> := Body2 } = Data2,
+    %% #{ <<"data">> := <<"hello">> } = jsx:decode(Body2, [return_maps]),
 
     ok.
 
@@ -217,6 +202,30 @@ head(_Config) ->
     });
     ">>),
     #{<<"code">> := 200 } = Data0,
+
+    ok.
+
+headers(_Config) ->
+    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"ok">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 'header': 'ok' } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
+    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"1">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 'header': 1 } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
+    {ok, #{ <<"headers">> := #{ <<"1">> := <<"header">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 1: 'header' } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
 
     ok.
 
