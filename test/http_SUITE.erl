@@ -8,19 +8,25 @@
 -export([end_per_testcase/2]).
 
 -export([simple/1]).
+
 -export([get/1]).
 -export([post/1]).
 -export([put/1]).
 -export([delete/1]).
 -export([head/1]).
+
 -export([https/1]).
+-export([arguments/1]).
+-export([headers/1]).
 
 %% Callbacks
 
 all() ->
     [
         simple,
-        get
+        get,
+        arguments,
+        headers
         %% post,
         %% put,
         %% delete,
@@ -45,17 +51,40 @@ end_per_testcase(_Case, Config) ->
 
 simple(_Config) ->
     {ok, #{ <<"args">> := #{ <<"x">> := <<"1">> } }} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get?x=1')
+    http.get('http://127.0.01:5000/get?x=1')
         .then((resp) => resp.json())
-        .then((json) => process.return(json));
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
     ">>),
+    ok.
+
+headers(_Config) ->
+    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"ok">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 'header': 'ok' } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
+    {ok, #{ <<"headers">> := #{ <<"Header">> := <<"1">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 'header': 1 } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
+    {ok, #{ <<"headers">> := #{ <<"1">> := <<"header">> }}} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/headers', { headers: { 1: 'header' } })
+        .then((resp) => resp.json())
+        .then((json) => process.return(json))
+        .catch((error) => process.return(error));
+    ">>),
+
     ok.
 
 get(_Config) ->
     {ok, #{ <<"args">> := #{ <<"test">> := <<"fest">> } }} = erlang_v8_lib:run(<<"
-    http.get('http://httpbin.org/get', {
-        payload: { test: 'fest' }
-    }).then(function(resp) {
+    http.get('http://127.0.01:5000/get?test=fest').then(function(resp) {
         return resp.json();
     }).then(function(json) {
         process.return(json);
@@ -64,34 +93,33 @@ get(_Config) ->
     });
     ">>),
 
-    %% {ok, Data1} = erlang_v8_lib:run(<<"
-    %% http.get('http://httpbin.org/get?test=fest').then(function(resp) {
-    %%     return resp.json();
-    %% }).then(function(json) {
-    %%     process.return(json);
-    %% });
-    %% ">>),
-    %% #{ <<"args">> := #{ <<"test">> := <<"fest">> } } =
-        %% jsx:decode(Data1, [return_maps]),
+    {ok, Data1} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.01:5000/get?test=fest').then((resp) => {
+        return resp.json();
+    }).then(function(json) {
+        process.return(json);
+    });
+    ">>),
+    #{ <<"args">> := #{ <<"test">> := <<"fest">> } } = Data1,
 
     %% {ok, Data2} = erlang_v8_lib:run(<<"
-    %% http.get('http://httpbin.org/status/404').then(function(resp) {
+    %% http.get('http://127.0.01:5000/status/404').then(function(resp) {
     %%     process.return(resp);
     %% });
     %% ">>),
     %% #{ <<"code">> := 404 } = Data2,
 
     %% {ok, Data3} = erlang_v8_lib:run(<<"
-    %% http.get('http://httpbin.org/status/200').then(function(data) {
+    %% http.get('http://127.0.01:5000/status/200').then(function(data) {
     %%     process.return(data);
     %% });
     %% ">>),
     %% true = is_number(maps:get(<<"time">>, Data3)),
 
     %% {ok, Data4} = erlang_v8_lib:run(<<"
-    %% http.get('http://httpbin.org/get', {
+    %% http.get('http://127.0.01:5000/get', {
     %%     headers: { 'Content-Type': 'application/json' },
-    %%     payload: { test: 'fest' }
+    %%     body: { test: 'fest' }
     %% }).then(function(resp) {
     %%     return resp.json();
     %% }).then(function(json) {
@@ -102,7 +130,7 @@ get(_Config) ->
     %%     jsx:decode(Data4, [return_maps]),
     %%
     %% {ok, Data5} = erlang_v8_lib:run(<<"
-    %% http.get('http://httpbin.org/get?test=fest', {
+    %% http.get('http://127.0.01:5000/get?test=fest', {
     %%     headers: { 'Connection': 'close' }
     %% }).then(function(resp) {
     %%     return resp.json();
@@ -116,8 +144,8 @@ get(_Config) ->
 
 post(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', {
-        payload : 'hello'
+    http.post('http://127.0.0.1:5000/post', {
+        body : 'hello'
     }).then(function(data) {
         process.return(data);
     });
@@ -126,9 +154,9 @@ post(_Config) ->
     #{ <<"data">> := <<"hello">> } = jsx:decode(Body0, [return_maps]),
 
     {ok, Data1} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', {
+    http.post('http://127.0.0.1:5000/post', {
         headers: { 'Content-Type': 'application/json' },
-        payload: 'hello',
+        body: 'hello',
     }).then(function(data) {
         process.return(data);
     });
@@ -137,12 +165,12 @@ post(_Config) ->
     #{ <<"data">> := <<"hello">> } = jsx:decode(Body1, [return_maps]),
 
     {ok, Data2} = erlang_v8_lib:run(<<"
-    http.post('http://httpbin.org/post', {
+    http.post('http://127.0.01:5000/post', {
         headers: {
            'Content-Type': 'application/json',
            'Connection': 'close'
         },
-        payload: 'hello',
+        body: 'hello',
     }).then(function(data) {
         process.return(data);
     });
@@ -154,9 +182,9 @@ post(_Config) ->
 
 put(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.put('http://httpbin.org/put', {
+    http.put('http://127.0.01:5000/put', {
         headers: { 'Content-Type': 'application/json' },
-        payload: 'hello'
+        body: 'hello'
     }).then(function(data) {
         process.return(data);
     });
@@ -169,9 +197,9 @@ put(_Config) ->
 
 delete(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.delete('http://httpbin.org/delete', {
+    http.delete('http://127.0.01:5000/delete', {
         headers: { 'Content-Type': 'application/json' },
-        payload: 'hello'
+        body: 'hello'
     }).then(function(data) {
         process.return(data);
     });
@@ -184,7 +212,7 @@ delete(_Config) ->
 
 head(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.head('http://httpbin.org').then(function(resp) {
+    http.head('http://127.0.0.1:5000').then(function(resp) {
         process.return(resp);
     });
     ">>),
@@ -192,10 +220,16 @@ head(_Config) ->
 
     ok.
 
+arguments(_Config) ->
+    {ok, <<"Invalid arguments">>} = erlang_v8_lib:run(<<"
+    http.get(1).catch((error) => process.return(error));
+    ">>),
+    ok.
+
 https(_Config) ->
     {ok, Data0} = erlang_v8_lib:run(<<"
-    http.get('https://httpbin.org/get', {
-        payload: { test: 'fest' }
+    http.get('https://127.0.01:5000/get', {
+        body: { test: 'fest' }
     }).then(function(data) {
         process.return(data);
     }).catch(function(err) {

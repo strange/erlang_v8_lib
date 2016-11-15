@@ -4,16 +4,44 @@
 
 -define(RESOLVE_FUN, <<"http.__resolve_promise">>).
 
-run([URL, Method, Headers, Payload], _HandlerContext) ->
-    application:ensure_all_started(hackney),
+run([URL, Method, Headers, Payload], HandlerContext) ->
+    validate_args(#{
+        url => URL,
+        method => Method,
+        headers => Headers,
+        payload => Payload
+    }, HandlerContext).
+
+validate_args(Config, HandlerContext) ->
+    case oath:validate(Config, map, #{ rules => [
+            {url, url, #{}},
+            {method, binary, #{}},
+            {headers, map, #{ required => false, default => #{} }},
+            {payload, binary, #{ required => false, default => <<>> }}
+         ]}) of
+        {ok, ValidConfig} ->
+            validate_headers(ValidConfig, HandlerContext);
+        {error, _Errors} ->
+            {error, <<"Invalid arguments">>}
+    end.
+
+validate_headers(#{ headers := Headers } = Config, HandlerContext) ->
+    ValidHeaders = clean_headers(Headers),
+    UpdatedHeaders = [{<<"Connection">>, <<"close">>}|ValidHeaders],
+    validate_method(Config#{ headers => UpdatedHeaders }, HandlerContext).
+
+validate_method(#{ method := Method } = Config, HandlerContext) ->
+    ValidMethod = clean_method(Method),
+    perform_request(Config#{ method => ValidMethod }, HandlerContext).
+
+perform_request(#{ url := URL, headers := Headers, payload := Payload,
+                   method := Method }, _HandlerContext) ->
     Opts = [
         {connect_timeout, 6000},
         {recv_timeout, 6000}
     ],
-    NewHeaders = [{<<"Connection">>, <<"close">>}|clean_headers(Headers)],
     Now = erlang:timestamp(),
-    case hackney:request(clean_method(Method), URL, NewHeaders, Payload,
-                         Opts) of
+    case hackney:request(Method, URL, Headers, Payload, Opts) of
         {ok, Code, _RespHeaders, ClientRef} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
             case hackney:body(ClientRef) of
@@ -57,5 +85,10 @@ clean_method(<<"HEAD">>) -> head;
 clean_method(<<"head">>) -> head;
 clean_method(_Other) -> get.
 
-clean_headers(<<"{}">>) -> [];
-clean_headers(Headers) -> jsx:decode(Headers).
+clean_headers(Headers) when is_map(Headers) ->
+    case jsx:decode(jsx:encode(Headers)) of
+        [{}] -> [];
+        NewHeaders -> NewHeaders
+    end;
+clean_headers(_) ->
+    [].

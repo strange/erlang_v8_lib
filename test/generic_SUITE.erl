@@ -18,12 +18,12 @@
 
 all() ->
     [
-        %% console_log,
-        %% instructions,
-        manual_release,
-        automatic_release
-        %% context,
-        %% return
+        %% %% console_log,
+        %% %% instructions,
+        %% manual_release,
+        %% automatic_release
+        %% %% context,
+        %% %% return
     ].
 
 init_per_suite(Config) ->

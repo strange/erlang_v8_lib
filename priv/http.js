@@ -4,6 +4,7 @@ var http = (function() {
     /**
      * Request data parameters are contained in an object with the following
      * layout.
+     *
      * @typedef {Object} RequestData
      * @property {object|string} payload {type: Object<*string>|String}
      * @property {object} headers {type: Object<*string>}
@@ -47,19 +48,20 @@ var http = (function() {
      *
      * @param {string} method The HTTP "verb" to use.
      * @param {string} url The remote url to make the request to.
-     * @param {?RequestData=} data The data to append to the request.
+     * @param {?RequestData=} options The data to append to the request.
      */
-    function request(method, url, data) {
-        data = data || {};
-        data.payload = data.payload || {};
-        data.headers = data.headers || {};
-        data.options = data.options || {};
+    function request(url, config) {
+        config = config || {};
+
+        var body = config.body || '';
+        var headers = config.headers || {};
+        var method = config.method || 'GET';
 
         return external.run('http', [
             String(url),
             String(method).toUpperCase(),
-            JSON.stringify(data.headers),
-            String(data.payload)
+            Object(headers),
+            String(body)
         ]);
     };
 
@@ -69,16 +71,10 @@ var http = (function() {
      * @param {string} url The remote url to make the request to.
      * @param {?RequestData=} data The data to append to the request.
      */
-    function get(url, data) {
-        if (data &&
-            data.payload &&
-            typeof data.payload !== 'string' &&
-            Object.keys(data.payload).length !== 0) {
-            url += formatQueryParams(data.payload);
-            data.payload = {};
-        }
-
-        return http.request(methods.GET, url, data);
+    function get(url, config) {
+        config = config || {};
+        config.method = methods.GET;
+        return http.request(url, config);
     };
 
     function __resolve_promise(status, ref, resp) {
@@ -106,14 +102,14 @@ var http = (function() {
 
         resp.blob = function() {
             var p = new Promise(function(resolve, reject) {
-                reject('blobs are not supported yet.');
+                reject('Blobs are not supported yet.');
             });
             return p;
         };
 
         resp.arrayBuffer = function() {
             var p = new Promise(function(resolve, reject) {
-                reject('ArayBuffers are not supported yet.');
+                reject('ArrayBuffers are not supported yet.');
             });
             return p;
         };
