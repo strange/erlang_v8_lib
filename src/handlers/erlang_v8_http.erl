@@ -14,7 +14,7 @@ run([URL, Method, Headers, Payload], HandlerContext) ->
 
 validate_args(Config, HandlerContext) ->
     case oath:validate(Config, map, #{ rules => [
-            {url, url, #{}},
+            {url, url, #{ default_to_http => true }},
             {method, binary, #{}},
             {headers, map, #{ required => false, default => #{} }},
             {payload, binary, #{ required => false, default => <<>> }}

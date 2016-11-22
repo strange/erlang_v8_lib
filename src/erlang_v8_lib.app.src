@@ -4,8 +4,10 @@
     {id, "git"},
     {modules, [
         erlang_v8_http,
+        erlang_v8_ws,
         erlang_v8_lib,
         erlang_v8_lib_app,
+        erlang_v8_lib_bg_procs,
         erlang_v8_lib_pool,
         erlang_v8_lib_run,
         erlang_v8_lib_sup,
@@ -16,7 +18,7 @@
         erlang_v8_stdout_console
     ]},
     {registered, [erlang_v8_lib_sup]},
-    {applications, [kernel,stdlib,erlang_v8,hackney,lager]},
+    {applications, [kernel,stdlib,erlang_v8,hackney,gun,lager]},
     {mod, {erlang_v8_lib_app, []}},
     {env, [
         {core, [
@@ -24,6 +26,7 @@
         ]},
         {modules, [
             {erlang_v8_lib, "http.js"},
+            {erlang_v8_lib, "ws.js"},
             {erlang_v8_lib, "console.js"},
             {erlang_v8_lib, "cert.js"},
             {erlang_v8_lib, "context.js"}
@@ -31,6 +34,7 @@
         {handlers, [
             {<<"console">>, erlang_v8_stdout_console},
             {<<"cert">>, erlang_v8_cert},
+            {<<"ws">>, erlang_v8_ws},
             {<<"http">>, erlang_v8_http}
         ]}
     ]}

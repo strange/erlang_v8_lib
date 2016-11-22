@@ -13,7 +13,7 @@ start_link() ->
     start_link(#{}).
 
 start_link(Opts) ->
-	supervisor:start_link({local, ?MODULE}, ?MODULE, [Opts]).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, [Opts]).
 
 init([Opts]) ->
     SupFlags = #{
@@ -24,5 +24,8 @@ init([Opts]) ->
     ChildSpecs = [#{
         id => erlang_v8_lib_pool,
         start => {erlang_v8_lib_pool, start_link, [Opts]}
+    }, #{
+        id => erlang_v8_bg_procs,
+        start => {erlang_v8_lib_bg_procs, start_link, []}
     }],
     {ok, {SupFlags, ChildSpecs}}.

@@ -5,7 +5,9 @@
 run(Instructions, Opts) ->
     HandlerContext = maps:get(handler_context, Opts, #{}),
     {ok, Worker} = erlang_v8_lib_pool:claim(),
+    ok = erlang_v8_lib_bg_procs:connect(),
     R = run(Worker, Instructions, HandlerContext),
+    ok = erlang_v8_lib_bg_procs:disconnect(),
     ok = erlang_v8_lib_pool:release(Worker),
     R.
 

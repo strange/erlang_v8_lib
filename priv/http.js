@@ -2,17 +2,6 @@
 
 var http = (function() {
     /**
-     * Request data parameters are contained in an object with the following
-     * layout.
-     *
-     * @typedef {Object} RequestData
-     * @property {object|string} payload {type: Object<*string>|String}
-     * @property {object} headers {type: Object<*string>}
-     * @property {object} options {type: Object<*string|number>}
-     */
-    var RequestData;
-
-    /**
      * Supported HTTP request methods.
      *
      * @enum {string}
@@ -21,6 +10,7 @@ var http = (function() {
         DELETE: 'DELETE',
         GET: 'GET',
         HEAD: 'HEAD',
+        PATCH: 'PATCH',
         POST: 'POST',
         PUT: 'PUT'
     };
@@ -48,7 +38,7 @@ var http = (function() {
      *
      * @param {string} method The HTTP "verb" to use.
      * @param {string} url The remote url to make the request to.
-     * @param {Object} config Configuration
+     * @param {object} config Configuration
      */
     function request(method, url, config) {
         config = config || {};
@@ -113,17 +103,17 @@ var http = (function() {
         return __internal.handleExternal(status, ref, resp);
     };
 
-
     /**
      * Expose methods on the http object.
      */
     return {
         request: request,
-        get: request.bind(http, methods.GET),
-        delete: request.bind(http, methods.DELETE),
-        head: request.bind(http, methods.HEAD),
-        post: request.bind(http, methods.POST),
-        put: request.bind(http, methods.PUT),
+        get: request.bind({}, methods.GET),
+        delete: request.bind({}, methods.DELETE),
+        head: request.bind({}, methods.HEAD),
+        patch: request.bind({}, methods.PATCH),
+        post: request.bind({}, methods.POST),
+        put: request.bind({}, methods.PUT),
         __resolve_promise: __resolve_promise
     };
 })();
