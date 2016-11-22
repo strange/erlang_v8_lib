@@ -20,7 +20,6 @@ run([<<"send">>, Ref, Data], _HandlerContext) ->
     end;
 
 run([<<"receive">>, Ref], _HandlerContext) ->
-    lager:info("IN RECEIVE!"),
     case erlang_v8_lib_bg_procs:get(Ref) of
         {error, not_found} ->
             {error, <<"No connection!">>};
@@ -126,18 +125,15 @@ loop(Pid, Parent, Buf, Waiting) ->
             loop(Pid, Parent, Buf, Waiting);
 
         {gun_ws, Pid, {text, Frame}} when Waiting > 0 ->
-            lager:info("Sending frame: ~p", [Frame]),
             Parent ! {ws_frame, Frame},
             loop(Pid, Parent, Buf, Waiting - 1);
         {gun_ws, Pid, {text, Frame}} ->
-            lager:info("Storing frame: ~p", [Frame]),
             loop(Pid, Parent, Buf ++ Frame, Waiting);
 
         {gun_down, Pid, ws, _, _, _} ->
             close(Pid);
 
         {send, Frame} ->
-            lager:info("Sending frame!"),
             gun:ws_send(Pid, {text, Frame}),
             loop(Pid, Parent, Buf, Waiting);
 
