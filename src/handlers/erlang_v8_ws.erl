@@ -100,15 +100,19 @@ connect(Transport, Hostname, Port, Path) ->
 connect(Parent, Transport, Hostname, Port, Path) ->
     case gun:open(Hostname, Port, #{ retry => 0, transport => Transport }) of
         {ok, Pid} ->
-            {ok, http} = gun:await_up(Pid),
-            gun:ws_upgrade(Pid, Path, [], #{ compress => true }),
-            receive
-                {gun_ws_upgrade, Pid, ok, _} ->
-                    Parent ! ok,
-                    loop(Pid, Parent);
-                Msg ->
-                    lager:info("WS HS failed: ~p", [Msg]),
-                    Parent ! {error, <<"WebSocket upgrade failed.">>}
+            case gun:await_up(Pid) of
+                {ok, http} ->
+                    gun:ws_upgrade(Pid, Path, [], #{ compress => true }),
+                    receive
+                        {gun_ws_upgrade, Pid, ok, _} ->
+                            Parent ! ok,
+                            loop(Pid, Parent);
+                        Msg ->
+                            lager:info("WS HS failed: ~p", [Msg]),
+                            Parent ! {error, <<"WebSocket upgrade failed.">>}
+                    end;
+                {error, _Reason} ->
+                    Parent ! {error, <<"Unable to connect.">>}
             end;
         {error, _Reason} ->
             Parent ! {error, <<"Unable to connect.">>}
