@@ -27,7 +27,9 @@ run([<<"receive">>, Ref], _HandlerContext) ->
             Pid ! read,
             receive
                 {ws_frame, Frame} ->
-                    {ok, Frame}
+                    {ok, Frame};
+                ws_closed ->
+                    {error, <<"Socket closed.">>}
             end
     end.
 
@@ -131,7 +133,7 @@ loop(Pid, Parent, Buf, Waiting) ->
             loop(Pid, Parent, Buf ++ Frame, Waiting);
 
         {gun_down, Pid, ws, _, _, _} ->
-            close(Pid);
+            close(Pid, Parent);
 
         {send, Frame} ->
             gun:ws_send(Pid, {text, Frame}),
@@ -146,9 +148,10 @@ loop(Pid, Parent, Buf, Waiting) ->
 
         Other ->
             lager:error("Unexpected ws message ~p", [Other]),
-            close(Pid)
+            close(Pid, Parent)
     end.
 
-close(Pid) ->
+close(Pid, Parent) ->
+    Parent ! ws_closed,
     gun:close(Pid),
     gun:flush(Pid).
