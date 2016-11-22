@@ -140,7 +140,7 @@ loop(Pid, Parent, Buf, Waiting) ->
         read when length(Buf) > 0 ->
             [Frame|Rest] = Buf,
             Parent ! {ws_frame, Frame},
-            loop(Pid, Parent, Rest, Waiting + 1);
+            loop(Pid, Parent, Rest, Waiting);
         read ->
             loop(Pid, Parent, Buf, Waiting + 1);
 

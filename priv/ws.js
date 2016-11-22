@@ -20,7 +20,7 @@ var ws = (function() {
             return external.run('ws', ['receive', socket]);
         };
 
-        conn.write = function(data) {
+        conn.send = function(data) {
             return external.run('ws', ['send', socket, data]);
         };
 
