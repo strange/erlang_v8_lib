@@ -11,13 +11,13 @@
 -export([init/1]).
 
 start(_Type, _Args) ->
-	erlang_v8_lib_app:start_link().
+    erlang_v8_lib_app:start_link().
 
 stop(_State) ->
-	ok.
+    ok.
 
 start_link() ->
-	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
     SupFlags = #{
