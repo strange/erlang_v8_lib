@@ -32,10 +32,13 @@ end_per_testcase(_Case, Config) ->
 %% Tests
 
 simple(_Config) ->
-    {ok, <<"data">>} = erlang_v8_lib:run(<<"
+    {ok, #{ <<"reqData">> := <<"data">> }} = erlang_v8_lib:run(<<"
     ws.open('ws://sockb.in')
-        .then((conn) => conn.receive())
-        .then((data) => process.return(data))
+        .then((conn) => {
+            conn.send('data');
+            return conn.receive();
+        })
+        .then((data) => process.return(JSON.parse(data)))
         .catch((error) => process.return(error));
     ">>),
 
