@@ -24,6 +24,10 @@ var ws = (function() {
             return external.run('ws', ['send', socket, data]);
         };
 
+        conn.close = function() {
+            return external.run('ws', ['close', socket]);
+        };
+
         return __internal.handleExternal(status, ref, conn);
     };
 

@@ -14,17 +14,30 @@ run([<<"connect">>, URL, Headers], HandlerContext) ->
 run([<<"send">>, Ref, Data], _HandlerContext) ->
     case erlang_v8_lib_bg_procs:get(Ref) of
         {error, not_found} ->
-            {error, <<"No connection!">>};
+            {error, <<"No connection.">>};
         {ok, Pid} ->
             Pid ! {send, Data},
-            {ok, <<"sent!">>}
+            {ok, <<"Data sent.">>}
+    end;
+
+run([<<"close">>, Ref], _HandlerContext) ->
+    case erlang_v8_lib_bg_procs:get(Ref) of
+        {error, not_found} ->
+            {error, <<"No connection.">>};
+        {ok, Pid} ->
+            Pid ! close,
+            receive
+                ws_closed ->
+                    erlang_v8_lib_bg_procs:remove(Ref),
+                    {ok, <<"Socket closed.">>}
+            end
     end;
 
 run([<<"receive">>, Ref], HandlerContext) ->
     Timeout = maps:get(ws_recv_timeout, HandlerContext, ?DEFAULT_RECV_TIMEOUT),
     case erlang_v8_lib_bg_procs:get(Ref) of
         {error, not_found} ->
-            {error, <<"No connection!">>};
+            {error, <<"No connection.">>};
         {ok, Pid} ->
             Pid ! read,
             receive
@@ -153,6 +166,9 @@ loop(Pid, Parent, Buf, Waiting) ->
             loop(Pid, Parent, Rest, Waiting);
         read ->
             loop(Pid, Parent, Buf, Waiting + 1);
+
+        close ->
+            close(Pid, Parent);
 
         Other ->
             lager:error("Unexpected ws message ~p", [Other]),

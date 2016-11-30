@@ -6,6 +6,7 @@
 -export([disconnect/0]).
 -export([add/1]).
 -export([get/1]).
+-export([remove/1]).
 
 -export([init/1]).
 -export([handle_call/3]).
@@ -31,6 +32,9 @@ add(Proc) ->
 get(Ref) ->
     gen_server:call(?MODULE, {get, self(), Ref}).
 
+remove(Ref) ->
+    gen_server:call(?MODULE, {remove, self(), Ref}).
+
 %% Callbacks
 
 init([]) ->
@@ -48,6 +52,16 @@ handle_call({get, Pid, Ref}, _From, State) ->
     case ets:lookup_element(?MODULE, Pid, 3) of
         #{ Ref := Proc } ->
             {reply, {ok, Proc}, State};
+        _ ->
+            {reply, {error, not_found}, State}
+    end;
+
+handle_call({remove, Pid, Ref}, _From, State) ->
+    case ets:lookup_element(?MODULE, Pid, 3) of
+        #{ Ref := _Proc } = Procs ->
+            NewProcs = maps:remove(Ref, Procs),
+            ets:update_element(?MODULE, Pid, {3, NewProcs}),
+            {reply, ok, State};
         _ ->
             {reply, {error, not_found}, State}
     end;

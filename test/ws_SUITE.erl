@@ -8,12 +8,14 @@
 -export([end_per_testcase/2]).
 
 -export([simple/1]).
+-export([close/1]).
 
 %% Callbacks
 
 all() ->
     [
-        simple
+        simple,
+        close
     ].
 
 init_per_suite(Config) ->
@@ -39,6 +41,18 @@ simple(_Config) ->
             return conn.receive();
         })
         .then((data) => process.return(JSON.parse(data)))
+        .catch((error) => process.return(error));
+    ">>),
+
+    ok.
+
+close(_Config) ->
+    {ok, <<"No connection.">>} = erlang_v8_lib:run(<<"
+    ws.open('ws://sockb.in')
+        .then((conn) => {
+            conn.close();
+            return conn.send('test');
+        })
         .catch((error) => process.return(error));
     ">>),
 
