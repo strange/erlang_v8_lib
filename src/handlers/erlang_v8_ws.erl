@@ -2,6 +2,7 @@
 
 -export([run/2]).
 
+-define(DEFAULT_RECV_TIMEOUT, 5000).
 -define(RESOLVE_CONN_FUN, <<"ws.__resolve_conn_promise">>).
 
 run([<<"connect">>, URL, Headers], HandlerContext) ->
@@ -19,7 +20,8 @@ run([<<"send">>, Ref, Data], _HandlerContext) ->
             {ok, <<"sent!">>}
     end;
 
-run([<<"receive">>, Ref], _HandlerContext) ->
+run([<<"receive">>, Ref], HandlerContext) ->
+    Timeout = maps:get(ws_recv_timeout, HandlerContext, ?DEFAULT_RECV_TIMEOUT),
     case erlang_v8_lib_bg_procs:get(Ref) of
         {error, not_found} ->
             {error, <<"No connection!">>};
@@ -30,6 +32,8 @@ run([<<"receive">>, Ref], _HandlerContext) ->
                     {ok, Frame};
                 ws_closed ->
                     {error, <<"Socket closed.">>}
+                after Timeout ->
+                    {error, <<"Receive timeout reached.">>}
             end
     end.
 
