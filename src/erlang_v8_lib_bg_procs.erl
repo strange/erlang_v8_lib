@@ -20,10 +20,10 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 connect() ->
-    gen_server:cast(?MODULE, {connect, self()}).
+    gen_server:call(?MODULE, {connect, self()}).
 
 disconnect() ->
-    gen_server:cast(?MODULE, {disconnect, self()}).
+    gen_server:call(?MODULE, {disconnect, self()}).
 
 add(Proc) ->
     gen_server:call(?MODULE, {add, self(), Proc}).
@@ -52,26 +52,26 @@ handle_call({get, Pid, Ref}, _From, State) ->
             {reply, {error, not_found}, State}
     end;
 
-handle_call(_Message, _From, State) ->
-    {reply, ok, State}.
-
-handle_cast({connect, Pid}, State) ->
+handle_call({connect, Pid}, _From, State) ->
     MRef = erlang:monitor(process, Pid),
     ets:insert(?MODULE, {Pid, MRef, #{}}),
-    {noreply, State};
+    {reply, ok, State};
 
-handle_cast({disconnect, Pid}, State) ->
+handle_call({disconnect, Pid}, _From, State) ->
     [{_Pid, MRef, Procs}] = ets:lookup(?MODULE, Pid),
     exit_all_procs(Procs, normal),
     true = ets:delete(?MODULE, Pid),
-    true = erlang:demonitor(MRef),
-    {noreply, State};
+    true = erlang:demonitor(MRef, [flush]),
+    {reply, ok, State};
+
+handle_call(_Message, _From, State) ->
+    {reply, ok, State}.
 
 handle_cast(_Message, State) ->
     {noreply, State}.
 
-handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
-    [{_Pid, _MRef, Procs}] = ets:lookup(?MODULE, Pid),
+handle_info({'DOWN', MRef, process, Pid, Reason}, State) ->
+    [{_Pid, MRef, Procs}] = ets:lookup(?MODULE, Pid),
     true = ets:delete(?MODULE, Pid),
     exit_all_procs(Procs, Reason),
     {noreply, State};
