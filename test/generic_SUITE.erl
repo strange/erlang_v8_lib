@@ -7,6 +7,7 @@
 -export([init_per_testcase/2]).
 -export([end_per_testcase/2]).
 
+-export([exceptions/1]).
 -export([console_log/1]).
 -export([instructions/1]).
 -export([return/1]).
@@ -18,12 +19,13 @@
 
 all() ->
     [
-        %% %% console_log,
-        %% %% instructions,
-        %% manual_release,
-        %% automatic_release
-        %% %% context,
-        %% %% return
+        %% console_log,
+        %% instructions,
+        exceptions,
+        manual_release,
+        automatic_release
+        %% context,
+        %% return
     ].
 
 init_per_suite(Config) ->
@@ -40,6 +42,17 @@ end_per_testcase(_Case, Config) ->
     ok.
 
 %% Tests
+
+exceptions(_Config) ->
+    {ok, #{ <<"message">> := <<"ERROR">> }} = erlang_v8_lib:run(<<"
+    var p = new Promise(function(resolve, reject) {
+        throw new Error('ERROR');
+    });
+    p.catch(function(err) {
+        process.return(err);
+    });
+    ">>),
+    ok.
 
 console_log(_Config) ->
     ok = erlang_v8_lib:run(<<"console.log('test');">>),

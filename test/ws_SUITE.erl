@@ -33,7 +33,7 @@ end_per_testcase(_Case, Config) ->
 
 simple(_Config) ->
     {ok, <<"data">>} = erlang_v8_lib:run(<<"
-    ws.connect('ws://sockb.in')
+    ws.open('ws://sockb.in')
         .then((conn) => conn.receive())
         .then((data) => process.return(data))
         .catch((error) => process.return(error));
