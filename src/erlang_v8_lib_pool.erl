@@ -106,7 +106,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal
 
 parse_opts(Opts) ->
-    VMs = maps:get(vms, Opts, 50),
+    VMs = maps:get(vms, Opts, 5),
 
     ExtraModules = maps:get(extra_modules, Opts, []),
     Modules = maps:get(modules, Opts,
