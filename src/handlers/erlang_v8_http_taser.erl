@@ -1,4 +1,4 @@
--module(erlang_v8_http).
+-module(erlang_v8_http_taser).
 
 -export([run/2]).
 
@@ -29,8 +29,7 @@ validate_args(Config, HandlerContext) ->
 
 validate_headers(#{ headers := Headers } = Config, HandlerContext) ->
     ValidHeaders = clean_headers(Headers),
-    UpdatedHeaders = [{<<"Connection">>, <<"close">>}|ValidHeaders],
-    validate_method(Config#{ headers => UpdatedHeaders }, HandlerContext).
+    validate_method(Config#{ headers => ValidHeaders }, HandlerContext).
 
 validate_method(#{ method := Method } = Config, HandlerContext) ->
     ValidMethod = clean_method(Method),
@@ -38,25 +37,18 @@ validate_method(#{ method := Method } = Config, HandlerContext) ->
 
 perform_request(#{ url := URL, headers := Headers, payload := Payload,
                    method := Method }, _HandlerContext) ->
-    Opts = [
-        {connect_timeout, 6000},
-        {recv_timeout, 6000}
-    ],
+    Opts = #{
+        connect_timeout => 6000,
+        response_timeout => 10000,
+        data => Payload
+    },
     Now = erlang:timestamp(),
-    case catch hackney:request(Method, URL, Headers, Payload, Opts) of
-        {ok, Code, RespHeaders, ClientRef} ->
+    case catch taser:request(Method, URL, Headers, Opts) of
+        {ok, Code, RespHeaders, Body} ->
             Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
-            case hackney:body(ClientRef) of
-                {ok, Body} ->
-                    {resolve_in_js, ?RESOLVE_FUN,
-                     #{ code => Code, body => Body, time => Time,
-                        headers => jsx:encode(RespHeaders) }};
-                {error, _Error} ->
-                    {error, <<"Error reading body.">>}
-            end;
-        {ok, Code, _RespHeaders} ->
-            Time = timer:now_diff(erlang:timestamp(), Now) / 1000,
-            {resolve_in_js, ?RESOLVE_FUN, #{ code => Code, time => Time }};
+            Response = #{ code => Code, body => Body, time => Time,
+                          headers => jsx:encode(RespHeaders) },
+            {resolve_in_js, ?RESOLVE_FUN, Response};
         {error, nxdomain} ->
             {error, <<"Invalid domain.">>};
         {error, closed} ->
@@ -65,6 +57,10 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
             {error, <<"HTTP request timed out">>};
         {error, connect_timeout} ->
             {error, <<"HTTP connection timed out">>};
+        {error, response_timeout} ->
+            {error, <<"HTTP server did not respond in time">>};
+        {error, body_timeout} ->
+            {error, <<"HTTP server did not send entire body in time">>};
         {error, ehostunreach} ->
             {error, <<"HTTP host not reachable">>};
         {error, enetunreach} ->
@@ -72,7 +68,7 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
         {error, econnrefused} ->
             {error, <<"HTTP connection refused.">>};
         Other ->
-            io:format("Unspecified HTTP error: ~p~n", [Other]),
+            lager:info("Unspecified HTTP error: ~p", [Other]),
             {error, <<"Unspecified HTTP error.">>}
     end.
 

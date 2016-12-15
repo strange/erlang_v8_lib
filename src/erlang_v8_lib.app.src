@@ -4,6 +4,7 @@
     {id, "git"},
     {modules, [
         erlang_v8_http,
+        erlang_v8_http_taser,
         erlang_v8_ws,
         erlang_v8_lib,
         erlang_v8_lib_app,
@@ -35,7 +36,7 @@
             {<<"console">>, erlang_v8_stdout_console},
             {<<"cert">>, erlang_v8_cert},
             {<<"ws">>, erlang_v8_ws},
-            {<<"http">>, erlang_v8_http}
+            {<<"http">>, erlang_v8_http_taser}
         ]}
     ]}
 ]}.

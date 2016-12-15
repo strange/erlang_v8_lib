@@ -8,7 +8,7 @@ run(Instructions, Opts) ->
     ok = erlang_v8_lib_bg_procs:connect(),
     R = run(Worker, Instructions, HandlerContext),
     ok = erlang_v8_lib_bg_procs:disconnect(),
-    ok = erlang_v8_lib_pool:release(Worker),
+    _ = erlang_v8_lib_pool:release(Worker),
     R.
 
 run(Worker, [Instruction|Instructions], HandlerContext) ->

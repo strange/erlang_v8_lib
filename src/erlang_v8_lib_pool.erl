@@ -27,13 +27,13 @@ start_link(Opts) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [Opts], []).
 
 claim() ->
-    {ok, VM, Ref, Handlers} = gen_server:call(?MODULE, {claim, self()}, 2000),
+    {ok, VM, Ref, Handlers} = gen_server:call(?MODULE, {claim, self()}, 10000),
     {ok, Context} = erlang_v8_vm:create_context(VM),
     ets:insert(?MODULE, {self(), VM, Context, Ref}),
     {ok, {VM, Context, Handlers}}.
 
 release({VM, Context, _Handlers}) ->
-    gen_server:call(?MODULE, {release, VM, Context}, 2000).
+    gen_server:call(?MODULE, {release, VM, Context}, 30000).
 
 eval({VM, Context, _Handlers}, Source) ->
     erlang_v8:eval(VM, Context, Source).
