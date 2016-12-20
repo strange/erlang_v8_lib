@@ -70,7 +70,7 @@ handle_call({release, VM, Context}, _From, State) ->
     case ets:match_object(?MODULE, Pattern) of
         [{_Pid, _VM, _Context, Ref}] ->
             ok = erlang_v8_vm:destroy_context(VM, Context),
-            true = erlang:demonitor(Ref),
+            true = erlang:demonitor(Ref, [flush]),
             true = ets:match_delete(?MODULE, Pattern),
             {reply, ok, State};
         [] ->
@@ -87,7 +87,7 @@ handle_info({'DOWN', Ref, process, Pid, _Reason}, State) ->
     Pattern = {Pid, '_', '_', Ref},
     case ets:match_object(?MODULE, Pattern) of
         [{Pid, VM, Context, Ref}] ->
-            ok = erlang_v8_vm:destroy_context(VM, Context),
+            _ = erlang_v8_vm:destroy_context(VM, Context),
             true = ets:match_delete(?MODULE, Pattern),
             {noreply, State};
         [] ->

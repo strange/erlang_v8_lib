@@ -36,7 +36,7 @@
             {<<"console">>, erlang_v8_stdout_console},
             {<<"cert">>, erlang_v8_cert},
             {<<"ws">>, erlang_v8_ws},
-            {<<"http">>, erlang_v8_http_taser}
+            {<<"http">>, erlang_v8_http}
         ]}
     ]}
 ]}.

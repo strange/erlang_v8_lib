@@ -21,7 +21,7 @@ init_per_suite(Config) ->
     Config.
 
 init_per_testcase(_Case, Config) ->
-    {ok, Pid} = erlang_v8_lib_sup:start_link(#{ vms => 0 }),
+    {ok, Pid} = erlang_v8_lib_sup:start_link(#{ vms => 1 }),
     [{pid, Pid}|Config].
 
 end_per_testcase(_Case, Config) ->

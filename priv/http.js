@@ -46,6 +46,7 @@ var http = (function() {
         var body = config.body || '';
         var headers = config.headers || {};
         var queryParams = config.queryParams || {};
+        var followRedirect = config.followRedirect || false;
 
         url += formatQueryParams(queryParams);
 
@@ -53,7 +54,8 @@ var http = (function() {
             String(url),
             String(method).toUpperCase(),
             Object(headers),
-            String(body)
+            String(body),
+            Boolean(followRedirect)
         ]);
     };
 

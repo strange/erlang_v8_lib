@@ -18,6 +18,7 @@
 -export([https/1]).
 -export([arguments/1]).
 -export([headers/1]).
+-export([redirect/1]).
 
 %% Callbacks
 
@@ -30,7 +31,8 @@ all() ->
         post,
         put,
         delete,
-        head
+        head,
+        redirect
         %% https
     ].
 
@@ -165,6 +167,19 @@ arguments(_Config) ->
     %% {ok, <<"invalid_url">>} = erlang_v8_lib:run(<<"
     %% http.get(1).catch((error) => process.return(error));
     %% ">>),
+    ok.
+
+redirect(_Config) ->
+    {ok, 302} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.0.1:5000/redirect/1')
+        .then((resp) => process.return(resp.code));
+    ">>),
+
+    {ok, 200} = erlang_v8_lib:run(<<"
+    http.get('http://127.0.0.1:5000/redirect/1', { followRedirect: true })
+        .then((resp) => process.return(resp.code));
+    ">>),
+
     ok.
 
 https(_Config) ->

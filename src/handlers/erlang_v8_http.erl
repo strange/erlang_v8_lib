@@ -4,12 +4,13 @@
 
 -define(RESOLVE_FUN, <<"http.__resolve_promise">>).
 
-run([URL, Method, Headers, Payload], HandlerContext) ->
+run([URL, Method, Headers, Payload, FollowRedirect], HandlerContext) ->
     validate_args(#{
         url => URL,
         method => Method,
         headers => Headers,
-        payload => Payload
+        payload => Payload,
+        follow_redirect => FollowRedirect
     }, HandlerContext).
 
 validate_args(Config, HandlerContext) ->
@@ -17,7 +18,9 @@ validate_args(Config, HandlerContext) ->
             {url, url, #{ default_to_http => true }},
             {method, binary, #{}},
             {headers, map, #{ required => false, default => #{} }},
-            {payload, binary, #{ required => false, default => <<>> }}
+            {payload, binary, #{ required => false, default => <<>> }},
+            {follow_redirect, any, #{ required => false, default => false,
+                                       in => [true, false] }}
          ]}) of
         {ok, ValidConfig} ->
             validate_headers(ValidConfig, HandlerContext);
@@ -37,10 +40,12 @@ validate_method(#{ method := Method } = Config, HandlerContext) ->
     perform_request(Config#{ method => ValidMethod }, HandlerContext).
 
 perform_request(#{ url := URL, headers := Headers, payload := Payload,
-                   method := Method }, _HandlerContext) ->
+                   method := Method, follow_redirect := FollowRedirect },
+                _HandlerContext) ->
     Opts = [
         {connect_timeout, 6000},
-        {recv_timeout, 6000}
+        {recv_timeout, 6000},
+        {follow_redirect, FollowRedirect}
     ],
     Now = erlang:timestamp(),
     case catch hackney:request(Method, URL, Headers, Payload, Opts) of
