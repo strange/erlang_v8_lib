@@ -56,7 +56,8 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
                     {resolve_in_js, ?RESOLVE_FUN,
                      #{ code => Code, body => Body, time => Time,
                         headers => jsx:encode(RespHeaders) }};
-                {error, _Error} ->
+                {error, Error} ->
+                    lager:info("Error reading body! ~p", [Error]),
                     {error, <<"Error reading body.">>}
             end;
         {ok, Code, _RespHeaders} ->

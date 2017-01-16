@@ -12,20 +12,17 @@ var ws = (function() {
         ]);
     };
 
-    function __resolve_conn_promise(status, ref, conn) {
-        var socket = conn.ref;
-        delete conn.ref;
-
-        conn.receive = function() {
-            return external.run('ws', ['receive', socket]);
-        };
-
-        conn.send = function(data) {
-            return external.run('ws', ['send', socket, data]);
-        };
-
-        conn.close = function() {
-            return external.run('ws', ['close', socket]);
+    function __resolve_conn_promise(status, ref, socket) {
+        var conn = {
+            receive: function() {
+                return external.run('ws', ['receive', socket]);
+            },
+            send: function(data) {
+                return external.run('ws', ['send', socket, String(data)]);
+            },
+            close: function() {
+                return external.run('ws', ['close', socket]);
+            }
         };
 
         return __internal.handleExternal(status, ref, conn);

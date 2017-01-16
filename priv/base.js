@@ -22,15 +22,15 @@ var __internal = {
     setContext: function(context) {
         __internal.context = context || {};
     },
-    handleExternal: function(status, ref, args) {
+    handleExternal: function(status, ref, value) {
         __internal.actions = [];
         if (status && ref) {
             var promise = __internal.promises[ref];
 
             if (status === 'success') {
-                promise.resolve(args);
+                promise.resolve(value);
             } else if (status === 'error') {
-                promise.reject(args);
+                promise.reject(value);
             }
         }
         return __internal.actions;

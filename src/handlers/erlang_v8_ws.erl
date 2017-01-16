@@ -72,8 +72,8 @@ validate_url(#{ url := URL } = _Config, _HandlerContext) ->
         {ok, Transport, Hostname, Port, Path} ->
             case connect(Transport, Hostname, Port, Path) of
                 {ok, Pid} ->
-                    {ok, Ref} = erlang_v8_lib_bg_procs:add(Pid),
-                    {resolve_in_js, ?RESOLVE_CONN_FUN, #{ ref => Ref }};
+                    {ok, ConnRef} = erlang_v8_lib_bg_procs:add(Pid),
+                    {resolve_in_js, ?RESOLVE_CONN_FUN, ConnRef};
                 {error, Reason} ->
                     {error, Reason}
             end;
