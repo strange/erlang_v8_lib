@@ -59,7 +59,7 @@ simple(_Config) ->
         .catch((error) => process.return(error));
     ">>),
 
-    {ok, <<"Invalid domain.">>} = erlang_v8_lib:run(<<"
+    {ok, <<"HTTP connection timed out">>} = erlang_v8_lib:run(<<"
     http.get('abcdefedcba')
         .then((resp) => resp.json())
         .then((json) => process.return(json))
@@ -142,7 +142,7 @@ headers(_Config) ->
     ">>),
 
     {ok, #{ <<"headers">> := #{ <<"Header">> := <<"1">> }}} = erlang_v8_lib:run(<<"
-    http.get('http://127.0.0.1:5000/headers', { headers: { 'header': 1 } })
+    http.get('http://127.0.0.1:5000/headers', { headers: { 'header': '1' } })
         .then((resp) => resp.json())
         .then((json) => process.return(json))
         .catch((error) => process.return(error));
@@ -155,7 +155,7 @@ headers(_Config) ->
         .catch((error) => process.return(error));
     ">>),
 
-    {ok, #{ <<"Content-Type">> := <<"application/json">> }} = erlang_v8_lib:run(<<"
+    {ok, #{ <<"content-type">> := <<"application/json">> }} = erlang_v8_lib:run(<<"
     http.get('http://127.0.0.1:5000/get')
         .then((resp) => process.return(resp.headers))
         .catch((error) => process.return(error));

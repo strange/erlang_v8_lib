@@ -19,7 +19,7 @@
         erlang_v8_stdout_console
     ]},
     {registered, [erlang_v8_lib_sup]},
-    {applications, [kernel,stdlib,erlang_v8,hackney,gun,lager]},
+    {applications, [kernel,stdlib,erlang_v8,hackney,taser,gun,lager]},
     {mod, {erlang_v8_lib_app, []}},
     {env, [
         {core, [

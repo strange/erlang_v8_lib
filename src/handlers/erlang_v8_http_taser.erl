@@ -4,12 +4,13 @@
 
 -define(RESOLVE_FUN, <<"http.__resolve_promise">>).
 
-run([URL, Method, Headers, Payload], HandlerContext) ->
+run([URL, Method, Headers, Payload, FollowRedirect], HandlerContext) ->
     validate_args(#{
         url => URL,
         method => Method,
         headers => Headers,
-        payload => Payload
+        payload => Payload,
+        follow_redirect => FollowRedirect
     }, HandlerContext).
 
 validate_args(Config, HandlerContext) ->
@@ -17,7 +18,9 @@ validate_args(Config, HandlerContext) ->
             {url, url, #{ default_to_http => true }},
             {method, binary, #{}},
             {headers, map, #{ required => false, default => #{} }},
-            {payload, binary, #{ required => false, default => <<>> }}
+            {payload, binary, #{ required => false, default => <<>> }},
+            {follow_redirect, any, #{ required => false, default => false,
+                                       in => [true, false] }}
          ]}) of
         {ok, ValidConfig} ->
             validate_headers(ValidConfig, HandlerContext);
@@ -29,18 +32,21 @@ validate_args(Config, HandlerContext) ->
 
 validate_headers(#{ headers := Headers } = Config, HandlerContext) ->
     ValidHeaders = clean_headers(Headers),
-    validate_method(Config#{ headers => ValidHeaders }, HandlerContext).
+    UpdatedHeaders = [{<<"Connection">>, <<"close">>}|ValidHeaders],
+    validate_method(Config#{ headers => UpdatedHeaders }, HandlerContext).
 
 validate_method(#{ method := Method } = Config, HandlerContext) ->
     ValidMethod = clean_method(Method),
     perform_request(Config#{ method => ValidMethod }, HandlerContext).
 
 perform_request(#{ url := URL, headers := Headers, payload := Payload,
-                   method := Method }, _HandlerContext) ->
+                   method := Method, follow_redirect := FollowRedirect },
+                _HandlerContext) ->
     Opts = #{
         connect_timeout => 6000,
         response_timeout => 10000,
-        data => Payload
+        data => Payload,
+        follow_redirects => FollowRedirect
     },
     Now = erlang:timestamp(),
     case catch taser:request(Method, URL, Headers, Opts) of
