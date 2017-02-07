@@ -119,7 +119,6 @@ connect(Transport, Hostname, Port, Path) ->
     end.
 
 connect(Parent, Transport, Hostname, Port, Path) ->
-    lager:info("Connecting bro!"),
     case gun:open(Hostname, Port, #{ retry => 0, transport => Transport }) of
         {ok, Pid} ->
             case gun:await_up(Pid) of
@@ -134,7 +133,9 @@ connect(Parent, Transport, Hostname, Port, Path) ->
                             Parent ! {error, <<"WebSocket upgrade failed.">>}
                     end;
                 {error, _Reason} ->
-                    Parent ! {error, <<"Unable to connect.">>}
+                    Parent ! {error, <<"Unable to connect.">>},
+                    gun:close(Pid),
+                    gun:flush(Pid)
             end;
         {error, _Reason} ->
             Parent ! {error, <<"Unable to connect.">>}
