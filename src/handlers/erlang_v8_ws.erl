@@ -106,7 +106,11 @@ clean_headers(_) ->
 
 connect(Transport, Hostname, Port, Path) ->
     Parent = self(),
-    Pid = spawn(fun() -> connect(Parent, Transport, Hostname, Port, Path) end),
+    Pid = spawn(fun() ->
+        link(Parent),
+        process_flag(trap_exit, true),
+        connect(Parent, Transport, Hostname, Port, Path)
+    end),
     receive
         ok ->
             {ok, Pid};
@@ -115,6 +119,7 @@ connect(Transport, Hostname, Port, Path) ->
     end.
 
 connect(Parent, Transport, Hostname, Port, Path) ->
+    lager:info("Connecting bro!"),
     case gun:open(Hostname, Port, #{ retry => 0, transport => Transport }) of
         {ok, Pid} ->
             case gun:await_up(Pid) of
@@ -168,6 +173,9 @@ loop(Pid, Parent, Buf, Waiting) ->
             loop(Pid, Parent, Buf, Waiting + 1);
 
         close ->
+            close(Pid, Parent);
+
+        {'EXIT', _Pid, _Reason} ->
             close(Pid, Parent);
 
         Other ->

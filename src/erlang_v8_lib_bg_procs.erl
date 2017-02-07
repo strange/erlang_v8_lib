@@ -90,7 +90,8 @@ handle_info({'DOWN', MRef, process, Pid, Reason}, State) ->
     exit_all_procs(Procs, Reason),
     {noreply, State};
 
-handle_info(_Msg, State) ->
+handle_info(Msg, State) ->
+    lager:info("Other: ~p", [Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
