@@ -4,11 +4,19 @@ var ws = (function() {
     function open(url, options) {
         options = options || {};
         var headers = options.headers || {};
+        var subprotocols = options.subprotocols || [];
+
+        if (!Array.isArray(subprotocols)) {
+            subprotocols = [String(subprotocols)];
+        } else {
+            subprotocols = subprotocols.map((v) => String(v));
+        }
 
         return external.run('ws', [
             'connect',
             String(url),
-            Object(headers)
+            Object(headers),
+            subprotocols
         ]);
     };
 

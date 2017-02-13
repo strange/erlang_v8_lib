@@ -5,10 +5,11 @@
 -define(DEFAULT_RECV_TIMEOUT, 5000).
 -define(RESOLVE_CONN_FUN, <<"ws.__resolve_conn_promise">>).
 
-run([<<"connect">>, URL, Headers], HandlerContext) ->
+run([<<"connect">>, URL, Headers, Subprotocols], HandlerContext) ->
     validate_args(#{
         url => URL,
-        headers => Headers
+        headers => Headers,
+        subprotocols => Subprotocols
     }, HandlerContext);
 
 run([<<"send">>, Ref, Data], _HandlerContext) ->
@@ -53,6 +54,7 @@ run([<<"receive">>, Ref], HandlerContext) ->
 validate_args(Config, HandlerContext) ->
     case oath:validate(Config, map, #{ rules => [
             {url, string, #{ default_to_http => true }},
+            {subprotocols, list, #{ default => []}},
             {headers, map, #{ required => false, default => #{} }}
          ]}) of
         {ok, ValidConfig} ->
@@ -64,13 +66,21 @@ validate_args(Config, HandlerContext) ->
     end.
 
 validate_headers(#{ headers := Headers } = Config, HandlerContext) ->
-    _ValidHeaders = clean_headers(Headers),
-    validate_url(Config, HandlerContext).
+    ValidHeaders = clean_headers(Headers),
+    inject_subprotocols(Config#{ headers => ValidHeaders }, HandlerContext).
 
-validate_url(#{ url := URL } = _Config, _HandlerContext) ->
+inject_subprotocols(#{ headers := Headers,
+                       subprotocols := Subprotocols } = Config,
+                    HandlerContext) ->
+    SubprotocolHeaders = [{<<"sec-websocket-protocol">>, P}
+                          || P <- Subprotocols],
+    validate_url(Config#{ headers => Headers ++ SubprotocolHeaders },
+                 HandlerContext).
+
+validate_url(#{ url := URL, headers := Headers } = _Config, _HandlerContext) ->
     case clean_url(URL) of
         {ok, Transport, Hostname, Port, Path} ->
-            case connect(Transport, Hostname, Port, Path) of
+            case connect(Transport, Hostname, Port, Path, Headers) of
                 {ok, Pid} ->
                     {ok, ConnRef} = erlang_v8_lib_bg_procs:add(Pid),
                     {resolve_in_js, ?RESOLVE_CONN_FUN, ConnRef};
@@ -104,12 +114,12 @@ clean_headers(_) ->
 
 %% WS connection stuff
 
-connect(Transport, Hostname, Port, Path) ->
+connect(Transport, Hostname, Port, Path, Headers) ->
     Parent = self(),
     Pid = spawn(fun() ->
         link(Parent),
         process_flag(trap_exit, true),
-        connect(Parent, Transport, Hostname, Port, Path)
+        connect(Parent, Transport, Hostname, Port, Path, Headers)
     end),
     receive
         ok ->
@@ -118,12 +128,12 @@ connect(Transport, Hostname, Port, Path) ->
             {error, Reason}
     end.
 
-connect(Parent, Transport, Hostname, Port, Path) ->
+connect(Parent, Transport, Hostname, Port, Path, Headers) ->
     case gun:open(Hostname, Port, #{ retry => 0, transport => Transport }) of
         {ok, Pid} ->
             case gun:await_up(Pid) of
                 {ok, http} ->
-                    gun:ws_upgrade(Pid, Path, [], #{ compress => true }),
+                    gun:ws_upgrade(Pid, Path, Headers, #{ compress => true }),
                     receive
                         {gun_ws_upgrade, Pid, ok, _} ->
                             Parent ! ok,
@@ -152,33 +162,26 @@ loop(Pid, Parent, Buf, Waiting) ->
         {gun_ws, Pid, {close, Code, _}} ->
             gun:ws_send(Pid, {close, Code, <<>>}),
             loop(Pid, Parent, Buf, Waiting);
-
         {gun_ws, Pid, {text, Frame}} when Waiting > 0 ->
             Parent ! {ws_frame, Frame},
             loop(Pid, Parent, Buf, Waiting - 1);
         {gun_ws, Pid, {text, Frame}} ->
             loop(Pid, Parent, Buf ++ Frame, Waiting);
-
         {gun_down, Pid, ws, _, _, _} ->
             close(Pid, Parent);
-
         {send, Frame} ->
             gun:ws_send(Pid, {text, Frame}),
             loop(Pid, Parent, Buf, Waiting);
-
         read when length(Buf) > 0 ->
             [Frame|Rest] = Buf,
             Parent ! {ws_frame, Frame},
             loop(Pid, Parent, Rest, Waiting);
         read ->
             loop(Pid, Parent, Buf, Waiting + 1);
-
         close ->
             close(Pid, Parent);
-
         {'EXIT', _Pid, _Reason} ->
             close(Pid, Parent);
-
         Other ->
             lager:error("Unexpected ws message ~p", [Other]),
             close(Pid, Parent)
