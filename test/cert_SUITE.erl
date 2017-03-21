@@ -4,6 +4,7 @@
 
 -export([all/0]).
 -export([init_per_suite/1]).
+-export([end_per_suite/1]).
 -export([init_per_testcase/2]).
 -export([end_per_testcase/2]).
 
@@ -22,6 +23,9 @@ all() ->
 
 init_per_suite(Config) ->
     application:ensure_all_started(erlang_v8_lib),
+    Config.
+
+end_per_suite(Config) ->
     Config.
 
 init_per_testcase(_Case, Config) ->
