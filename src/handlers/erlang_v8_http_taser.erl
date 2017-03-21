@@ -32,8 +32,7 @@ validate_args(Config, HandlerContext) ->
 
 validate_headers(#{ headers := Headers } = Config, HandlerContext) ->
     ValidHeaders = clean_headers(Headers),
-    UpdatedHeaders = [{<<"Connection">>, <<"close">>}|ValidHeaders],
-    validate_method(Config#{ headers => UpdatedHeaders }, HandlerContext).
+    validate_method(Config#{ headers => ValidHeaders }, HandlerContext).
 
 validate_method(#{ method := Method } = Config, HandlerContext) ->
     ValidMethod = clean_method(Method),
@@ -74,7 +73,7 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
         {error, econnrefused} ->
             {error, <<"HTTP connection refused.">>};
         Other ->
-            lager:info("Unspecified HTTP error: ~p", [Other]),
+            lager:info("Unspecified HTTP error (~p): ~p", [URL, Other]),
             {error, <<"Unspecified HTTP error.">>}
     end.
 
