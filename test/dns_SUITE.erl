@@ -36,40 +36,39 @@ end_per_testcase(_Case, Config) ->
 %% Tests
 
 generic(_Config) ->
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
+    {ok, #{ <<"answers">> := [#{ <<"value">> := _ }]}} =  erlang_v8_lib:run(<<"
         dns.resolve('google.com', 'a')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
+    {ok, #{ <<"answers">> := [#{ <<"value">> := _ }]}} =  erlang_v8_lib:run(<<"
         dns.resolve('google.com', 'aaaa')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
+    {ok, #{ <<"answers">> := [#{ <<"value">> := _ }]}} =  erlang_v8_lib:run(<<"
         dns.resolve('www.facebook.com', 'cname')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
-        dns.resolve('www.facebook.com', 'txt')
+    {ok, #{ <<"answers">> := [#{ <<"value">> := _ }]}} =  erlang_v8_lib:run(<<"
+        dns.resolve('facebook.com', 'txt')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
-        dns.resolve('www.facebook.com', 'srv')
+    {ok, #{ <<"answers">> := [#{ <<"value">> := _ }|_]}} =  erlang_v8_lib:run(<<"
+        dns.resolve('facebook.com', 'ns')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [#{ <<"value">> := _ }]} =  erlang_v8_lib:run(<<"
-        dns.resolve('www.facebook.com', 'ptr')
+    {ok, #{ <<"answers">> := []}} =  erlang_v8_lib:run(<<"
+        dns.resolve('facebook.com', 'naptr')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    {ok, [First|_]} =  erlang_v8_lib:run(<<"
+    {ok, #{ <<"answers">> := [#{ <<"exchange">> := _, <<"priority">> := _, <<"ttl">> := _ }|_]}} =  erlang_v8_lib:run(<<"
         dns.resolve('google.com', 'mx')
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
-    #{ <<"exchange">> := _, <<"priority">> := _, <<"ttl">> := _ } = First,
     ok.
