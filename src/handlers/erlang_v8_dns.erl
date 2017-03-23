@@ -52,10 +52,11 @@ get_type("NAPTR") -> naptr;
 get_type(_) -> a.
 
 format_answers(soa, Answers) ->
-    [#{ ttl => TTL, primary => Primary, email => Email, revision => Revision,
+    [#{ ttl => TTL, primary => format_value(Primary),
+        rname => format_value(RName), revision => Revision,
         refresh => Refresh, retry => Retry, expiration => Expiration,
         min_ttl => MinTTL  }
-     || {TTL, {Primary, Email, Revision, Refresh, Retry, Expiration, MinTTL}} <- Answers];
+     || {TTL, {Primary, RName, Revision, Refresh, Retry, Expiration, MinTTL}} <- Answers];
 format_answers(mx, Answers) ->
     [#{ ttl => TTL, exchange => Exchange, priority => Priority }
      || {TTL, {Priority, Exchange}} <- Answers];
