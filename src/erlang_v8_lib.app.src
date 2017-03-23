@@ -30,12 +30,14 @@
             {erlang_v8_lib, "ws.js"},
             {erlang_v8_lib, "console.js"},
             {erlang_v8_lib, "cert.js"},
+            {erlang_v8_lib, "dns.js"},
             {erlang_v8_lib, "context.js"}
         ]},
         {handlers, [
             {<<"console">>, erlang_v8_stdout_console},
             {<<"cert">>, erlang_v8_cert},
             {<<"ws">>, erlang_v8_ws},
+            {<<"dns">>, erlang_v8_dns},
             {<<"http">>, erlang_v8_http_taser}
         ]}
     ]}
