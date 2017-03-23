@@ -66,6 +66,11 @@ generic(_Config) ->
         .then((x) => process.return(x))
         .catch((x) => process.return(x));
     ">>),
+    {ok, #{ <<"answers">> := [#{ <<"primary">> := _ }|_]}} =  erlang_v8_lib:run(<<"
+        dns.resolve('facebook.com', 'soa')
+        .then((x) => process.return(x))
+        .catch((x) => process.return(x));
+    ">>),
     {ok, #{ <<"answers">> := [#{ <<"exchange">> := _, <<"priority">> := _, <<"ttl">> := _ }|_]}} =  erlang_v8_lib:run(<<"
         dns.resolve('google.com', 'mx')
         .then((x) => process.return(x))

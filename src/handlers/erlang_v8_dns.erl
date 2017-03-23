@@ -51,6 +51,11 @@ get_type("SOA") -> soa;
 get_type("NAPTR") -> naptr;
 get_type(_) -> a.
 
+format_answers(soa, Answers) ->
+    [#{ ttl => TTL, primary => Primary, email => Email, revision => Revision,
+        refresh => Refresh, retry => Retry, expiration => Expiration,
+        min_ttl => MinTTL  }
+     || {TTL, {Primary, Email, Revision, Refresh, Retry, Expiration, MinTTL}} <- Answers];
 format_answers(mx, Answers) ->
     [#{ ttl => TTL, exchange => Exchange, priority => Priority }
      || {TTL, {Priority, Exchange}} <- Answers];
@@ -58,6 +63,6 @@ format_answers(_Type, Answers)  ->
     [#{ ttl => TTL, value => format_value(Data) } || {TTL, Data} <- Answers].
 
 format_value(Value) when is_tuple(Value) ->
-    inet:ntoa(Value);
+    list_to_binary(inet:ntoa(Value));
 format_value(Value) ->
-    Value.
+    list_to_binary(Value).
