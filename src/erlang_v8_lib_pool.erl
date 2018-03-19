@@ -117,5 +117,5 @@ parse_opts(Opts) ->
     {ok, VMs, Files, Handlers}.
 
 random_vm(VMs) ->
-    lists:nth(random:uniform(length(VMs)), VMs).
+    lists:nth(rand:uniform(length(VMs)), VMs).
 
