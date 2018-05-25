@@ -45,7 +45,7 @@ run([<<"receive">>, Ref], HandlerContext) ->
                 {ws_frame, Frame} ->
                     {ok, Frame};
                 ws_closed ->
-                    {error, <<"Socket closed.">>}
+                    {error, <<"Socket closed recv.">>}
                 after Timeout ->
                     {error, <<"Receive timeout reached.">>}
             end
@@ -139,13 +139,12 @@ connect(Parent, Transport, Hostname, Port, Path, Headers) ->
                             Parent ! ok,
                             loop(Pid, Parent);
                         Msg ->
-                            lager:info("WS HS failed: ~p", [Msg]),
-                            Parent ! {error, <<"WebSocket upgrade failed.">>}
+                            lager:error("Websocket upgrade error: ~p", [Msg]),
+                            Parent ! {error, <<"WebSocket upgrade failed<.">>}
                     end;
                 {error, _Reason} ->
-                    Parent ! {error, <<"Unable to connect.">>},
-                    gun:close(Pid),
-                    gun:flush(Pid)
+                    gun:shutdown(Pid),
+                    Parent ! {error, <<"Unable to connect.">>}
             end;
         {error, _Reason} ->
             Parent ! {error, <<"Unable to connect.">>}
@@ -166,7 +165,7 @@ loop(Pid, Parent, Buf, Waiting) ->
             Parent ! {ws_frame, Frame},
             loop(Pid, Parent, Buf, Waiting - 1);
         {gun_ws, Pid, {text, Frame}} ->
-            loop(Pid, Parent, Buf ++ Frame, Waiting);
+            loop(Pid, Parent, Buf ++ [Frame], Waiting);
         {gun_down, Pid, ws, _, _, _} ->
             close(Pid, Parent);
         {send, Frame} ->
@@ -189,5 +188,4 @@ loop(Pid, Parent, Buf, Waiting) ->
 
 close(Pid, Parent) ->
     Parent ! ws_closed,
-    gun:close(Pid),
-    gun:flush(Pid).
+    gun:shutdown(Pid).

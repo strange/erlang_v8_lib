@@ -73,7 +73,7 @@ perform_request(#{ url := URL, headers := Headers, payload := Payload,
         {error, econnrefused} ->
             {error, <<"HTTP connection refused.">>};
         Other ->
-            lager:info("Unspecified HTTP error (~p): ~p", [URL, Other]),
+            lager:error("Unspecified HTTP error (~p): ~p", [URL, Other]),
             {error, <<"Unspecified HTTP error.">>}
     end.
 

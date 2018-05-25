@@ -23,9 +23,11 @@ all() ->
 
 init_per_suite(Config) ->
     application:ensure_all_started(erlang_v8_lib),
+    application:ensure_all_started(hemlock),
     Config.
 
 end_per_suite(Config) ->
+    application:stop(hemlock),
     Config.
 
 init_per_testcase(_Case, Config) ->
@@ -40,8 +42,8 @@ end_per_testcase(_Case, Config) ->
 %% Tests
 
 simple(_Config) ->
-    {ok, #{ <<"reqData">> := <<"data">> }} = erlang_v8_lib:run(<<"
-    ws.open('ws://sockb.in')
+    {ok, #{ <<"data">> := <<"data">> }} = erlang_v8_lib:run(<<"
+    ws.open('ws://127.0.0.1:5000/ws')
         .then((conn) => {
             conn.send('data');
             return conn.receive();
@@ -53,8 +55,8 @@ simple(_Config) ->
     ok.
 
 subprotocol(_Config) ->
-    {ok, #{ <<"reqData">> := <<"data">> }} = erlang_v8_lib:run(<<"
-    ws.open('ws://sockb.in', { subprotocols: ['lol', 1] })
+    {ok, #{ <<"data">> := <<"data">> }} = erlang_v8_lib:run(<<"
+    ws.open('ws://127.0.0.1:5000/ws', { subprotocols: ['lol', 1] })
         .then((conn) => {
             conn.send('data');
             return conn.receive();
@@ -68,7 +70,7 @@ subprotocol(_Config) ->
 
 close(_Config) ->
     {ok, <<"No connection.">>} = erlang_v8_lib:run(<<"
-    ws.open('ws://sockb.in')
+    ws.open('ws://127.0.0.1:5000/ws')
         .then((conn) => {
             conn.close();
             return conn.send('test');

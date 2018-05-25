@@ -9,6 +9,7 @@ erl_crash.dump
 /.rebar
 
 /_build
+/_checkouts
 /.rebar3
 /rebar.lock
 /.erlang.mk

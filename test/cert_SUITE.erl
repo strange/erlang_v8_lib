@@ -16,8 +16,9 @@
 
 all() ->
     [
-        %% success,
-        %% invalid_domain,
+        success,
+        invalid_domain
+        %% TODO: Invalid port test fails due to bug in current version of Arch.
         %% invalid_port
     ].
 
@@ -55,7 +56,7 @@ invalid_domain(_Config) ->
 
 invalid_port(_Config) ->
     {ok, <<"Invalid TLS", _/binary>>} =  erlang_v8_lib:run(<<"
-        cert.validity('google.com', 80)
+        cert.validity('github.com', 80)
         .catch((x) => process.return(x));
     ">>),
     ok.

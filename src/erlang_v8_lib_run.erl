@@ -7,7 +7,7 @@ run(Instructions, Opts) ->
     {ok, Worker} = erlang_v8_lib_pool:claim(),
     ok = erlang_v8_lib_bg_procs:connect(),
     R = run(Worker, Instructions, HandlerContext),
-    ok = erlang_v8_lib_bg_procs:disconnect(),
+    %% ok = erlang_v8_lib_bg_procs:disconnect(),
     _ = erlang_v8_lib_pool:release(Worker),
     R.
 
@@ -99,7 +99,8 @@ dispatch_external({_, _, Handlers}, Ref, Args, HandlerIdentifier,
                     [[callback, <<"success">>, Ref, <<>>]];
                 {error, Reason} when is_binary(Reason); is_atom(Reason) ->
                     [[callback, <<"error">>, Ref, Reason]];
-                {error, _Reason} ->
+                {error, Reason} ->
+                    lager:error("Unknown dispatch error: ~p", [Reason]),
                     [[callback, <<"error">>, Ref, <<"Unknown error.">>]]
             end
     end.
